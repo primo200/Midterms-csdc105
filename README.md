@@ -10,7 +10,7 @@ Follow these steps to run the application on your local machine:
 - Git installed
 - Internet connection (for Supabase database access)
 
-### Step-by-Step Setup
+Step-by-Step Setup
 
 1. Clone the repository
    ```bash
