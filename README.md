@@ -25,7 +25,6 @@ venv\Scripts\activate
 pip install -r requirements.txt
   
 3. Create a .env file in the root directory
- ```bash
   DATABASE_URL=postgresql://postgres.fjhmljrnuezbmsoylhcc:chatgptdabest@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?  sslmode=require
 SECRET_KEY=your-secret-key-here
 
