@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #87CEEB 0%, #0A1172 100%);
+    }
+
+    .container {
+      width: 420px;
+      background: #ffffff;
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(10, 17, 114, 0.3);
+      text-align: center;
+    }
+
+    .container h1 {
+      font-size: 32px;
+      color: #0A1172;
+      margin-bottom: 20px;
+    }
+
+    .input-box {
+      position: relative;
+      margin: 20px 0;
+    }
+
+    .input-box input {
+      width: 100%;
+      padding: 12px 45px 12px 15px;
+      background: #F0F8FF;
+      border-radius: 8px;
+      border: 1px solid #87CEEB;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .input-box input:focus {
+      outline: none;
+      border-color: #0A1172;
+      box-shadow: 0 0 5px rgba(10, 17, 114, 0.3);
+    }
+
+    .input-box i {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: #0A1172;
+    }
+
+    .forgot-link {
+      text-align: right;
+      margin-top: 5px;
+    }
+
+    .forgot-link a {
+      font-size: 14px;
+      color: #0A1172;
+      text-decoration: none;
+    }
+
+    .forgot-link a:hover {
+      color: #87CEEB;
+    }
+
+    .btn-link {
+      display: block;
+      width: 100%;
+      height: 45px;
+      line-height: 45px;
+      background: #0A1172;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      text-align: center;
+      text-decoration: none;
+      margin-top: 20px;
+      transition: background 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-link:hover {
+      background: #87CEEB;
+      color: #0A1172;
+    }
+
+    .toggle-register {
+      margin-top: 15px;
+      background: none;
+      border: none;
+      color: #0A1172;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    .toggle-register:hover {
+      color: #87CEEB;
+    }
+
+    .error-message {
+      color: #dc3545;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .messages {
+      margin-bottom: 20px;
+    }
+
+    .alert {
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .alert-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .social-icons {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .social-icons a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      border: 2px solid #87CEEB;
+      border-radius: 8px;
+      font-size: 22px;
+      color: #0A1172;
+      margin: 0 8px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .social-icons a:hover {
+      background: #0A1172;
+      color: white;
+      border-color: #0A1172;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Login</h1>
+
+    <!--messages/feedback (i.e., invalid email)-->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="messages">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!--login form-->
+    <form method="POST" action="{{ url_for('login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <div class="input-box">
+        <input type="text" name="username" placeholder="Username" required>
+        <i class='bx bxs-user'></i>
+      </div>
+      <div class="input-box">
+        <input type="password" name="password" placeholder="Password" required>
+        <i class='bx bxs-lock-alt'></i>
+      </div>
+      <div class="forgot-link">
+        <a href="#">Forgot Password?</a>
+      </div>
+
+      <button type="submit" class="btn-link">Login</button>
+    </form>
+
+    <button class="toggle-register" onclick="toggleRegister()">Register an Account</button>
+
+    <!--Registration Form (show by toggling) -->
+    <div id="register-form" class="hidden">
+      <form method="POST" action="{{ url_for('register') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="input-box">
+          <input type="text" name="reg_username" placeholder="Username" required>
+          <i class='bx bxs-user'></i>
+        </div>
+        <div class="input-box">
+          <input type="email" name="email" placeholder="Email" required>
+          <i class='bx bxs-envelope'></i>
+        </div>
+        <div class="input-box">
+          <input type="password" name="reg_password" placeholder="Password" required>
+          <i class='bx bxs-lock-alt'></i>
+        </div>
+        <div class="input-box">
+          <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+          <i class='bx bxs-lock'></i>
+        </div>
+        <button type="submit" class="btn-link">Register</button>
+      </form>
+    </div>
+
+    
+  </div>
+
+  <script>
+    function toggleRegister() {
+      const regForm = document.getElementById("register-form");
+      regForm.classList.toggle("hidden");
+    }
+  </script>
+</body>
+</html>
