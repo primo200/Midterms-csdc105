@@ -12,24 +12,24 @@ Follow these steps to run the application on your local machine:
 
 Step-by-Step Setup
 
-1. Clone the repository
+**Clone the repository**
    ```bash
    git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
    cd YOUR_REPO_NAME
 
-2. Create and activate a virtual environment
+**Create and activate a virtual environment**
 
  ```bash
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
   
-3. Create a .env file in the root directory
+**Create a .env file in the root directory**
   DATABASE_URL=postgresql://postgres.fjhmljrnuezbmsoylhcc:chatgptdabest@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?  sslmode=require
 SECRET_KEY=your-secret-key-here
 
-4. Run the application
+**Run the application**
     ```bash
 python app.py
 
-Open your browser and navigate to: http://127.0.0.1:5000
+**Open your browser and navigate to: http://127.0.0.1:5000**
