@@ -71,6 +71,8 @@ def create_app():
             price_per_unit = db.Column(db.Numeric(10, 2), nullable=False)
             total_price = db.Column(db.Numeric(10, 2), nullable=False)
             created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+        
     
     # ---------- ROUTES ----------
     @app.route('/')
@@ -246,6 +248,14 @@ def create_app():
         flash('Transaction deleted', 'success')
         return redirect(url_for('products'))
     
+    @app.route('/sales')
+    def sales():
+        if 'user_id' not in session:
+            flash('Please login first', 'error')
+            return redirect(url_for('login'))
+        product_transactions = ProductTransaction.query.order_by(ProductTransaction.created_at.desc()).all()
+        return render_template('sales.html', product_transactions=product_transactions)
+
     @app.route('/logout')
     def logout():
         session.clear()
