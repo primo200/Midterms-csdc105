@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,6 +36,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .header h1 {
@@ -47,6 +50,37 @@
         .header h1 i {
             font-size: 28px;
             color: #87CEEB;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background: rgba(135, 206, 235, 0.2);
+            color: white;
+            border: 1px solid #87CEEB;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #87CEEB;
+            color: #0A1172;
+        }
+
+        .nav-btn.active {
+            background: #87CEEB;
+            color: #0A1172;
         }
 
         .user-info {
@@ -132,19 +166,6 @@
             background: #F0F8FF;
         }
 
-        .badge {
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-left: 5px;
-        }
-
-        .badge-superuser {
-            background: #87CEEB;
-            color: #0A1172;
-        }
-
         .flash-messages {
             margin-bottom: 20px;
         }
@@ -202,6 +223,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -209,14 +231,21 @@
                 <i class="fas fa-cloud-sun"></i>
                 User Management System
             </h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('users_list') }}" class="nav-btn active">
+                    <i class="fas fa-users"></i> Users
+                </a>
+                <a href="{{ url_for('products') }}" class="nav-btn">
+                    <i class="fas fa-box"></i> Products
+                </a>
+            </div>
             <div class="user-info">
                 <span>
                     <i class="fas fa-user"></i>
                     {{ session.username }}
                 </span>
                 <a href="{{ url_for('logout') }}" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
+                    <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             </div>
         </div>
@@ -224,16 +253,17 @@
         <div class="content">
             <!--messages-->
             {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="flash-messages">
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }}">
-                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <i
+                        class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
             {% endwith %}
 
             <div class="stats-container">
@@ -262,17 +292,15 @@
                         {% for user in users %}
                         <tr>
                             <td>#{{ user.id }}</td>
-                            <td>
-                                <strong>{{ user.username }}</strong>
-                
-                            </td>
+                            <td><strong>{{ user.username }}</strong></td>
                             <td>{{ user.email }}</td>
                             <td>{{ user.date_joined.strftime('%Y-%m-%d') if user.date_joined else 'N/A' }}</td>
                         </tr>
                         {% else %}
                         <tr>
                             <td colspan="4" style="text-align: center; padding: 40px;">
-                                <i class="fas fa-users" style="font-size: 48px; color: #87CEEB; margin-bottom: 10px; display: block;"></i>
+                                <i class="fas fa-users"
+                                    style="font-size: 48px; color: #87CEEB; margin-bottom: 10px; display: block;"></i>
                                 No users found
                             </td>
                         </tr>
@@ -283,4 +311,5 @@
         </div>
     </div>
 </body>
+
 </html>
