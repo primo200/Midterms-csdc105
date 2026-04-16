@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TSRO - Sales Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #87CEEB 0%, #0A1172 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(10, 17, 114, 0.4);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #0A1172;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 i {
+            font-size: 28px;
+            color: #87CEEB;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: rgba(135, 206, 235, 0.2);
+            color: white;
+            border: 1px solid #87CEEB;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #87CEEB;
+            color: #0A1172;
+        }
+
+        .nav-btn.active {
+            background: #87CEEB;
+            color: #0A1172;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(135, 206, 235, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        .logout-btn {
+            background: #87CEEB;
+            color: #0A1172;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: #5FB0D0;
+            color: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .daily-total {
+            background: linear-gradient(135deg, #F0F8FF 0%, #ffffff 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            border-left: 4px solid #0A1172;
+            box-shadow: 0 2px 10px rgba(10, 17, 114, 0.1);
+        }
+
+        .daily-total h2 {
+            color: #0A1172;
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .daily-total span {
+            color: #0A1172;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .section-title {
+            margin: 30px 0 20px;
+            color: #333;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: #0A1172;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(10, 17, 114, 0.1);
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #F0F8FF;
+            color: #0A1172;
+            font-weight: 600;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #87CEEB;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #87CEEB;
+            color: #666;
+        }
+
+        tr:hover {
+            background: #F0F8FF;
+        }
+
+        .remove-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .remove-button:hover {
+            background-color: #c82333;
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-chart-line"></i>
+                Sales Dashboard
+            </h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('users_list') }}" class="nav-btn">
+                    <i class="fas fa-users"></i> Users
+                </a>
+                <a href="{{ url_for('products') }}" class="nav-btn">
+                    <i class="fas fa-box"></i> Products
+                </a>
+                <a href="{{ url_for('sales') }}" class="nav-btn active">
+                    <i class="fas fa-chart-line"></i> Sales
+                </a>
+            </div>
+            <div class="user-info">
+                <span>
+                    <i class="fas fa-user"></i>
+                    {{ session.username }}
+                </span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <i
+                        class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Daily Total Card -->
+            <div class="daily-total">
+                <h2><i class="fas fa-calendar-day"></i> Today's Total Sales</h2>
+                <span id="daily-total">₱0.00</span>
+            </div>
+
+            <!-- Product Sales Table (no volume, no fuel) -->
+            <div class="section-title">
+                <i class="fas fa-box-open"></i>
+                Product Sales
+            </div>
+            <div class="table-container">
+                <table id="product-sales-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Price per Unit (₱)</th>
+                            <th>Total (₱)</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in product_transactions %}
+                        <tr data-date="{{ trans.created_at.strftime('%B %d, %Y') if trans.created_at else '' }}"
+                            data-amount="{{ trans.total_price }}">
+                            <td>{{ trans.id }}</td>
+                            <td>{{ trans.name }}</td>
+                            <td>{{ trans.quantity }}</td>
+                            <td>₱{{ "%.2f"|format(trans.price_per_unit) }}</td>
+                            <td>₱{{ "%.2f"|format(trans.total_price) }}</td>
+                            <td>{{ trans.created_at.strftime('%B %d, %Y') if trans.created_at else 'N/A' }}</td>
+                            <td>
+                                <form method="POST"
+                                    action="{{ url_for('delete_product_transaction', transaction_id=trans.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="remove-button">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center;">No product sales recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculateDailyTotal() {
+            const today = new Date();
+            const todayStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            let total = 0;
+
+            // Product sales rows only
+            document.querySelectorAll('#product-sales-table tbody tr[data-date]').forEach(row => {
+                const date = row.getAttribute('data-date');
+                const amount = parseFloat(row.getAttribute('data-amount'));
+                if (date === todayStr && !isNaN(amount)) {
+                    total += amount;
+                }
+            });
+
+            const formattedTotal = total.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            document.getElementById('daily-total').textContent = `₱${formattedTotal}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', calculateDailyTotal);
+    </script>
+</body>
+
+</html>
