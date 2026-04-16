@@ -11,7 +11,6 @@ db = SQLAlchemy()
 csrf = CSRFProtect()
 
 def verify_django_password(raw_password, encoded):
-    """Verify password against Django's PBKDF2 format"""
     try:
         algorithm, iterations, salt, hash_value = encoded.split('$', 3)
         iterations = int(iterations)
@@ -37,7 +36,7 @@ def create_app():
     csrf.init_app(app)
     
     with app.app_context():
-        # ---------- USER MODEL ----------
+        #Models
         class User(db.Model):
             __tablename__ = 'auth_user'
             id = db.Column(db.Integer, primary_key=True)
@@ -52,8 +51,7 @@ def create_app():
             def __repr__(self):
                 return f"<User {self.username}>"
         
-        # ---------- PRODUCT MODELS ----------
-        # Use the actual table names from your Supabase (members_productstock, members_producttransaction)
+
         class ProductStock(db.Model):
             __tablename__ = 'members_productstock'
             id = db.Column(db.Integer, primary_key=True)
@@ -74,7 +72,7 @@ def create_app():
 
         
     
-    # ---------- ROUTES ----------
+    #Routes
     @app.route('/')
     def index():
         return redirect(url_for('login'))
@@ -114,7 +112,7 @@ def create_app():
             flash('Email already registered', 'error')
             return redirect(url_for('login'))
         
-        # Django-compatible password hash
+        #password hashing
         salt = base64.b64encode(os.urandom(18)).decode('utf-8').replace('+', '.').replace('/', '.')[:22]
         iterations = 1000000
         hash_bytes = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), iterations)
@@ -144,7 +142,7 @@ def create_app():
         users = User.query.all()
         return render_template('users.html', users=users, title='User List')
     
-    # ---------- PRODUCT ROUTES ----------
+    #Product Routes
     @app.route('/products')
     def products():
         if 'user_id' not in session:
@@ -203,30 +201,29 @@ def create_app():
             price = float(price_per_unit)
             total = qty * price
 
-            # Find the product stock
+            #find product stock
             stock_item = ProductStock.query.filter_by(name=name).first()
             if not stock_item:
                 flash(f'Product "{name}" not found in stock', 'error')
                 return redirect(url_for('products'))
 
-            # Check if enough stock is available
+            #check if enough stock is available
             if stock_item.quantity < qty:
                 flash(f'Insufficient stock. Only {stock_item.quantity} available.', 'error')
                 return redirect(url_for('products'))
 
-            # Decrease stock
+            #Decrease stock
             stock_item.quantity -= qty
 
-            # Create transaction record
+            #Create transaction 
             new_trans = ProductTransaction(
                 name=name,
                 quantity=qty,
-                volume_liters=0,          # default since volume removed from UI
+                volume_liters=0,          #set to zero since it is not desplayed/used in UI
                 price_per_unit=price,
                 total_price=total
             )
 
-            # Commit both changes in one transaction
             db.session.add(new_trans)
             db.session.commit()
 
