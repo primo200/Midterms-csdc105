@@ -36,8 +36,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: nowrap;          /* Prevent wrapping */
             gap: 20px;
-            flex-wrap: wrap;
         }
 
         .header h1 {
@@ -57,7 +57,7 @@
             display: flex;
             align-items: center;
             gap: 20px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
         }
 
         .nav-buttons {
@@ -124,6 +124,17 @@
         .logout-btn:hover {
             background: #5FB0D0;
             color: white;
+        }
+
+        /* Responsive: wrap only on very small screens */
+        @media (max-width: 768px) {
+            .header {
+                flex-wrap: wrap;
+            }
+            .header-right {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
         }
 
         .content {
@@ -264,14 +275,13 @@
         </div>
 
         <div class="content">
-            <!--messages-->
+            <!-- Flash messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="flash-messages">
                 {% for category, message in messages %}
                 <div class="alert alert-{{ category }}">
-                    <i
-                        class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
                     {{ message }}
                 </div>
                 {% endfor %}
@@ -286,7 +296,7 @@
                 </div>
             </div>
 
-            <!--Users Table-->
+            <!-- Users Table -->
             <div class="section-title">
                 <i class="fas fa-list"></i>
                 Registered Users
@@ -312,8 +322,7 @@
                         {% else %}
                         <tr>
                             <td colspan="4" style="text-align: center; padding: 40px;">
-                                <i class="fas fa-users"
-                                    style="font-size: 48px; color: #87CEEB; margin-bottom: 10px; display: block;"></i>
+                                <i class="fas fa-users" style="font-size: 48px; color: #87CEEB; margin-bottom: 10px; display: block;"></i>
                                 No users found
                             </td>
                         </tr>
