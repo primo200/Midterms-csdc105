@@ -264,7 +264,7 @@
         </div>
 
         <div class="content">
-            <!-- Flash messages -->
+            <!-- messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="flash-messages">
@@ -279,13 +279,11 @@
             {% endif %}
             {% endwith %}
 
-            <!-- Daily Total Card -->
             <div class="daily-total">
                 <h2><i class="fas fa-calendar-day"></i> Today's Total Sales</h2>
                 <span id="daily-total">₱0.00</span>
             </div>
 
-            <!-- Product Sales Table (no volume, no fuel) -->
             <div class="section-title">
                 <i class="fas fa-box-open"></i>
                 Product Sales
