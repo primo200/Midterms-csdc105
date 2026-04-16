@@ -322,7 +322,7 @@
         </div>
 
         <div class="content">
-            <!-- Flash messages -->
+            <!-- messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="flash-messages">
@@ -337,7 +337,6 @@
             {% endif %}
             {% endwith %}
 
-            <!-- Product Stock Section (CREATE & DELETE) -->
             <div class="product-section">
                 <div class="section-title">
                     <i class="fas fa-warehouse"></i>
@@ -386,7 +385,6 @@
                 </div>
             </div>
 
-            <!-- Product Transactions Section (CREATE & DELETE) - Volume removed -->
             <div class="product-section">
                 <div class="section-title">
                     <i class="fas fa-exchange-alt"></i>
@@ -410,7 +408,6 @@
                         <input type="number" name="quantity" step="1" min="1" required>
                     </div>
 
-                    <!-- Volume field removed -->
 
                     <div class="form-group">
                         <label>Price per Unit (₱)</label>
