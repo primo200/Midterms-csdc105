@@ -252,11 +252,14 @@
             </h1>
             <div class="header-right">
                 <div class="nav-buttons">
-                    <a href="{{ url_for('users_list') }}" class="nav-btn active">
+                    <a href="{{ url_for('users_list') }}" class="nav-btn">
                         <i class="fas fa-users"></i> Users
                     </a>
                     <a href="{{ url_for('products') }}" class="nav-btn">
-                        <i class="fas fa-box"></i> Products
+                        <i class="fas fa-box"></i> Stock
+                    </a>
+                    <a href="{{ url_for('transactions') }}" class="nav-btn">
+                        <i class="fas fa-receipt"></i> Transactions
                     </a>
                     <a href="{{ url_for('sales') }}" class="nav-btn">
                         <i class="fas fa-chart-line"></i> Sales

@@ -2,10 +2,10 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sales Dashboard</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Transactions</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -21,7 +21,7 @@
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 10px;
@@ -56,7 +56,6 @@
             display: flex;
             gap: 15px;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .nav-btn {
@@ -123,30 +122,8 @@
             padding: 30px;
         }
 
-        .daily-total {
-            background: linear-gradient(135deg, #F0F8FF 0%, #ffffff 100%);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            text-align: center;
-            border-left: 4px solid #0A1172;
-            box-shadow: 0 2px 10px rgba(10, 17, 114, 0.1);
-        }
-
-        .daily-total h2 {
-            color: #0A1172;
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .daily-total span {
-            color: #0A1172;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
         .section-title {
-            margin: 30px 0 20px;
+            margin-bottom: 20px;
             color: #333;
             font-size: 20px;
             display: flex;
@@ -158,12 +135,50 @@
             color: #0A1172;
         }
 
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .add-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .add-form select,
+        .add-form input {
+            padding: 8px;
+            border: 1px solid #87CEEB;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .add-form button {
+            background-color: #0A1172;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .add-form button:hover {
+            background-color: #87CEEB;
+            color: #0A1172;
+        }
+
         .table-container {
             overflow-x: auto;
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(10, 17, 114, 0.1);
-            margin-bottom: 30px;
         }
 
         table {
@@ -231,6 +246,47 @@
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #F0F8FF 0%, #ffffff 100%);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #0A1172;
+            box-shadow: 0 2px 10px rgba(10, 17, 114, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .stat-number {
+            font-size: 32px;
+            font-weight: 600;
+            color: #0A1172;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+            flex: 1;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #0A1172;
+        }
     </style>
 </head>
 
@@ -238,8 +294,8 @@
     <div class="container">
         <div class="header">
             <h1>
-                <i class="fas fa-chart-line"></i>
-                Sales Dashboard
+                <i class="fas fa-exchange-alt"></i>
+                Product Transactions
             </h1>
             <div class="nav-buttons">
                 <a href="{{ url_for('users_list') }}" class="nav-btn">
@@ -248,7 +304,7 @@
                 <a href="{{ url_for('products') }}" class="nav-btn">
                     <i class="fas fa-box"></i> Stock
                 </a>
-                <a href="{{ url_for('transactions') }}" class="nav-btn">
+                <a href="{{ url_for('transactions') }}" class="nav-btn active">
                     <i class="fas fa-receipt"></i> Transactions
                 </a>
                 <a href="{{ url_for('sales') }}" class="nav-btn">
@@ -267,7 +323,7 @@
         </div>
 
         <div class="content">
-            <!-- messages -->
+            <!-- Flash messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="flash-messages">
@@ -282,41 +338,83 @@
             {% endif %}
             {% endwith %}
 
-            <div class="daily-total">
-                <h2><i class="fas fa-calendar-day"></i> Today's Total Sales</h2>
-                <span id="daily-total">₱0.00</span>
+            <!-- Statistics: total transactions -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3><i class="fas fa-receipt"></i> Total Transactions</h3>
+                    <div class="stat-number">{{ transactions|length }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3><i class="fas fa-money-bill-wave"></i> Total Sales Value</h3>
+                    <div class="stat-number">₱{{ "%.2f"|format(total_amount) }}</div>
+                </div>
             </div>
 
+            <!-- Add Transaction Form -->
+            <div class="form-container">
+                <div class="section-title">
+                    <i class="fas fa-cart-plus"></i>
+                    Record New Transaction
+                </div>
+                <form method="POST" action="{{ url_for('add_product_transaction') }}" class="add-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="form-group">
+                        <label>Product</label>
+                        <select name="name" required>
+                            <option value="">Select a product</option>
+                            {% for item in stock_items %}
+                            <option value="{{ item.name }}">{{ item.name }} ({{ item.quantity }} available)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" name="quantity" step="1" min="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Price per Unit (₱)</label>
+                        <input type="number" name="price_per_unit" step="0.01" min="0.01" required>
+                    </div>
+
+                    <button type="submit"><i class="fas fa-save"></i> Add Transaction</button>
+                </form>
+            </div>
+
+            <!-- Transactions Table -->
             <div class="section-title">
-                <i class="fas fa-box-open"></i>
-                Product Sales
+                <i class="fas fa-list"></i>
+                All Product Transactions
             </div>
             <div class="table-container">
-                <table id="product-sales-table">
+                <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>#</th>
                             <th>Product</th>
                             <th>Quantity</th>
-                            <th>Price per Unit (₱)</th>
+                            <th>Price/Unit (₱)</th>
                             <th>Total (₱)</th>
                             <th>Date</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for trans in product_transactions %}
-                        <tr data-date="{{ trans.created_at.strftime('%B %d, %Y') if trans.created_at else '' }}"
-                            data-amount="{{ trans.total_price }}">
-                            <td>{{ trans.id }}</td>
-                            <td>{{ trans.name }}</td>
-                            <td>{{ trans.quantity }}</td>
-                            <td>₱{{ "%.2f"|format(trans.price_per_unit) }}</td>
-                            <td>₱{{ "%.2f"|format(trans.total_price) }}</td>
-                            <td>{{ trans.created_at.strftime('%B %d, %Y') if trans.created_at else 'N/A' }}</td>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ transaction.name }}</td>
+                            <td>{{ transaction.quantity }}</td>
+                            <td>₱{{ "%.2f"|format(transaction.price_per_unit) }}</td>
+                            <td>₱{{ "%.2f"|format(transaction.total_price) }}</td>
+                            <td>{{ transaction.created_at.strftime('%B %d, %Y') if transaction.created_at else 'N/A' }}
+                            </td>
                             <td>
                                 <form method="POST"
-                                    action="{{ url_for('delete_product_transaction', transaction_id=trans.id) }}">
+                                    action="{{ url_for('delete_product_transaction', transaction_id=transaction.id) }}"
+                                    style="display: inline;">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="remove-button">Delete</button>
                                 </form>
@@ -324,7 +422,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" style="text-align: center;">No product sales recorded yet.</td>
+                            <td colspan="7" style="text-align: center;">No transactions found</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -332,31 +430,6 @@
             </div>
         </div>
     </div>
-
-    <script>
-        function calculateDailyTotal() {
-            const today = new Date();
-            const todayStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-            let total = 0;
-
-            // Product sales rows only
-            document.querySelectorAll('#product-sales-table tbody tr[data-date]').forEach(row => {
-                const date = row.getAttribute('data-date');
-                const amount = parseFloat(row.getAttribute('data-amount'));
-                if (date === todayStr && !isNaN(amount)) {
-                    total += amount;
-                }
-            });
-
-            const formattedTotal = total.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-            document.getElementById('daily-total').textContent = `₱${formattedTotal}`;
-        }
-
-        document.addEventListener('DOMContentLoaded', calculateDailyTotal);
-    </script>
 </body>
 
 </html>

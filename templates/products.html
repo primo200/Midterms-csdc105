@@ -301,13 +301,16 @@
             </h1>
             <div class="nav-buttons">
                 <a href="{{ url_for('users_list') }}" class="nav-btn">
-                    <i class="fas fa-users"></i> View Users
+                    <i class="fas fa-users"></i> Users
                 </a>
-                <a href="{{ url_for('products') }}" class="nav-btn active">
-                    <i class="fas fa-box"></i> Products
+                <a href="{{ url_for('products') }}" class="nav-btn">
+                    <i class="fas fa-box"></i> Stock
+                </a>
+                <a href="{{ url_for('transactions') }}" class="nav-btn">
+                    <i class="fas fa-receipt"></i> Transactions
                 </a>
                 <a href="{{ url_for('sales') }}" class="nav-btn">
-                    <i class="fas fa-box"></i> Sales
+                    <i class="fas fa-chart-line"></i> Sales
                 </a>
             </div>
             <div class="user-info">
@@ -353,7 +356,6 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
                                 <th>Product</th>
                                 <th>Stock</th>
                                 <th>Last Updated</th>
@@ -363,7 +365,6 @@
                         <tbody>
                             {% for item in stock_items %}
                             <tr>
-                                <td>{{ item.id }}</td>
                                 <td>{{ item.name }}</td>
                                 <td>{{ item.quantity }}</td>
                                 <td>{{ item.updated_at.strftime('%B %d, %Y') if item.updated_at else 'N/A' }}</td>
@@ -385,89 +386,7 @@
                 </div>
             </div>
 
-            <div class="product-section">
-                <div class="section-title">
-                    <i class="fas fa-exchange-alt"></i>
-                    Product Transactions
-                </div>
-                <form method="POST" action="{{ url_for('add_product_transaction') }}" class="add-product-form">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <div class="form-group">
-                        <label>Product</label>
-                        <select name="name" required>
-                            <option value="">Select a product</option>
-                            {% for item in stock_items %}
-                            <option value="{{ item.name }}">{{ item.name }} ({{ item.quantity }} available)</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Quantity</label>
-                        <input type="number" name="quantity" step="1" min="1" required>
-                    </div>
-
-
-                    <div class="form-group">
-                        <label>Price per Unit (₱)</label>
-                        <input type="number" name="price_per_unit" step="0.01" min="0.01" required>
-                    </div>
-
-                    <button type="submit"><i class="fas fa-cart-plus"></i> Add Transaction</button>
-                </form>
-
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Product</th>
-                                <th>Quantity</th>
-                                <th>Price/Unit (₱)</th>
-                                <th>Total (₱)</th>
-                                <th>Date</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for transaction in transactions %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ transaction.name }}</td>
-                                <td>{{ transaction.quantity }}</td>
-                                <td>₱{{ "%.2f"|format(transaction.price_per_unit) }}</td>
-                                <td>₱{{ "%.2f"|format(transaction.total_price) }}</td>
-                                <td>{{ transaction.created_at.strftime('%B %d, %Y') if transaction.created_at else 'N/A'
-                                    }}</td>
-                                <td>
-                                    <form method="POST"
-                                        action="{{ url_for('delete_product_transaction', transaction_id=transaction.id) }}"
-                                        style="margin-top: 5px;">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="remove-button">Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="7" style="text-align: center;">No transactions found</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                        <tfoot>
-                            <tr style="background-color: #f1f8e9; font-weight: bold;">
-                                <td colspan="2" style="text-align: right;">Total:</td>
-                                <td>{{ total_quantity }}</td>
-                                <td>-</td>
-                                <td>₱{{ "%.2f"|format(total_amount) }}</td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+            
         </div>
     </div>
 </body>

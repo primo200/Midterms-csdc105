@@ -158,6 +158,21 @@ def create_app():
                                total_quantity=total_quantity,
                                total_amount=total_amount)
     
+    @app.route('/transactions')
+    def transactions():
+        if 'user_id' not in session:
+            flash('Please login first', 'error')
+            return redirect(url_for('login'))
+        stock_items = ProductStock.query.all()
+        transactions = ProductTransaction.query.order_by(ProductTransaction.created_at.desc()).all()
+        total_quantity = sum(t.quantity for t in transactions)
+        total_amount = sum(float(t.total_price) for t in transactions)
+        return render_template('transactions.html',
+                            stock_items=stock_items,
+                            transactions=transactions,
+                            total_quantity=total_quantity,
+                            total_amount=total_amount)
+
     @app.route('/add_product_stock', methods=['POST'])
     def add_product_stock():
         if 'user_id' not in session:
