@@ -21,7 +21,7 @@
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 10px;
@@ -36,8 +36,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
+            flex-wrap: nowrap; 
+            gap: 15px;
         }
 
         .header h1 {
@@ -252,6 +252,9 @@
             </h1>
             <div class="header-right">
                 <div class="nav-buttons">
+                    <a href="{{ url_for('home') }}" class="nav-btn">
+                        <i class="fas fa-home"></i> Home
+                    </a>
                     <a href="{{ url_for('users_list') }}" class="nav-btn">
                         <i class="fas fa-users"></i> Users
                     </a>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSRO Gas Station – Home</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #87CEEB 0%, #0A1172 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(10, 17, 114, 0.4);
+            overflow: hidden;
+        }
+
+        /* Header – same as other pages */
+        .header {
+            background: #0A1172;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 i {
+            font-size: 28px;
+            color: #87CEEB;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: rgba(135, 206, 235, 0.2);
+            color: white;
+            border: 1px solid #87CEEB;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #87CEEB;
+            color: #0A1172;
+        }
+
+        .nav-btn.active {
+            background: #87CEEB;
+            color: #0A1172;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(135, 206, 235, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        .logout-btn {
+            background: #87CEEB;
+            color: #0A1172;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: #5FB0D0;
+            color: white;
+        }
+
+        /* Main content sections */
+        .content {
+            padding: 30px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #F0F8FF 0%, #ffffff 100%);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        .hero-text {
+            flex: 1;
+        }
+
+        .hero-text h1 {
+            font-size: 2.5rem;
+            color: #0A1172;
+            margin-bottom: 1rem;
+        }
+
+        .hero-text h1 span {
+            color: #87CEEB;
+        }
+
+        .hero-text p {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: #0A1172;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #87CEEB;
+            color: #0A1172;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #0A1172;
+            color: #0A1172;
+            padding: 10px 24px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #0A1172;
+            color: white;
+        }
+
+        .hero-image {
+            flex: 1;
+            text-align: center;
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Features */
+        .section-title {
+            font-size: 1.8rem;
+            color: #0A1172;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: #F0F8FF;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-card i {
+            font-size: 2.5rem;
+            color: #0A1172;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            color: #0A1172;
+            margin-bottom: 10px;
+        }
+
+        /* About */
+        .about {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 40px;
+            align-items: center;
+        }
+
+        .about-text {
+            flex: 1;
+        }
+
+        .about-text h2 {
+            color: #0A1172;
+            margin-bottom: 15px;
+        }
+
+        .about-text p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .about-image {
+            flex: 1;
+            text-align: center;
+        }
+
+        .about-image img {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Stats cards */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #F0F8FF, #ffffff);
+            padding: 20px;
+            text-align: center;
+            border-left: 4px solid #0A1172;
+            border-radius: 8px;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            color: #0A1172;
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-gas-pump"></i>
+                TSRO Gas Station
+            </h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('home') }}" class="nav-btn active">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="{{ url_for('products') }}" class="nav-btn">
+                    <i class="fas fa-box"></i> Stock
+                </a>
+                <a href="{{ url_for('transactions') }}" class="nav-btn">
+                    <i class="fas fa-receipt"></i> Transactions
+                </a>
+                <a href="{{ url_for('sales') }}" class="nav-btn">
+                    <i class="fas fa-chart-line"></i> Sales
+                </a>
+                <a href="{{ url_for('users_list') }}" class="nav-btn">
+                    <i class="fas fa-users"></i> Users
+                </a>
+            </div>
+            <div class="user-info">
+                <span>
+                    <i class="fas fa-user"></i>
+                    {{ session.username }}
+                </span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <div class="content">
+            <!--messages-->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <i class="fas fa-info-circle"></i> {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <div class="hero">
+                <div class="hero-text">
+                    <h1>Welcome to <span>TSRO Gas Station</span></h1>
+                    <p>Your one-stop solution for fuel and product management. Track sales, manage inventory, and
+                        monitor performance all from a single dashboard. Built for efficiency and ease of use.</p>
+                    <div class="hero-buttons">
+                        <a href="{{ url_for('transactions') }}" class="btn-primary">Start Recording Sales</a>
+                        <a href="{{ url_for('products') }}" class="btn-secondary">Manage Stock</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="https://t3.ftcdn.net/jpg/03/15/45/88/360_F_315458868_dpLn4f1OQzmSSEJOAYINAKI0c5xn7dWa.jpg"
+                        alt="Gas station">
+                </div>
+            </div>
+
+            <!--quick Stats (real data from DB) -->
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>{{ total_stock_items }}</h3>
+                    <p>Products in Stock</p>
+                </div>
+                <div class="stat-card">
+                    <h3>{{ total_transactions }}</h3>
+                    <p>Total Sales Transactions</p>
+                </div>
+                <div class="stat-card">
+                    <h3>₱{{ "%.2f"|format(total_sales_value) }}</h3>
+                    <p>Total Revenue</p>
+                </div>
+            </div>
+
+            <h2 class="section-title">Why Choose TSRO?</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Real‑time Analytics</h3>
+                    <p>Monitor daily sales, fuel consumption, and product performance at a glance.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-boxes"></i>
+                    <h3>Inventory Control</h3>
+                    <p>Keep track of stock levels, receive low-stock alerts, and manage reorders.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-users"></i>
+                    <h3>User Management</h3>
+                    <p>Secure role‑based access for employees and administrators.</p>
+                </div>
+            </div>
+
+            <div class="about">
+                <div class="about-text">
+                    <h2>About TSRO Gas Station</h2>
+                    <p>TSRO Gas Station has been serving the community with high‑quality fuel and convenience products
+                        for over a decade. Our digital management system empowers station owners to track every liter of
+                        fuel sold, every product purchased, and every peso earned – all in one place.</p>
+                    <p>Built with modern web technologies, TSRO Management System offers a seamless experience for both
+                        desktop and mobile users, ensuring you never miss a sale.</p>
+                </div>
+                <div class="about-image">
+                    <img src="https://media.istockphoto.com/id/487858877/photo/smiling-gas-station-worker.jpg?s=612x612&w=0&k=20&c=LOUktdkw6o9htSemOKoGK_gmAmK0-9RI3VORO0tj-cE="
+                        alt="Gas station management">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

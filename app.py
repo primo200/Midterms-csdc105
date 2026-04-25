@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, app, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime
@@ -87,7 +87,7 @@ def create_app():
                 session['user_id'] = user.id
                 session['username'] = user.username
                 flash(f'Welcome back, {user.username}!', 'success')
-                return redirect(url_for('users_list'))
+                return redirect(url_for('home'))
             else:
                 flash('Invalid username or password', 'error')
         return render_template('login.html', title='Login')
@@ -198,6 +198,9 @@ def create_app():
         flash('Product deleted from stock', 'success')
         return redirect(url_for('products'))
     
+        # Inside create_app() after other routes, add:
+
+
     @app.route('/add_product_transaction', methods=['POST'])
     def add_product_transaction():
         if 'user_id' not in session:
@@ -274,6 +277,28 @@ def create_app():
         flash('You have been logged out', 'info')
         return redirect(url_for('login'))
     
+    # Inside create_app() after other routes, add:
+
+    @app.route('/home')
+    def home():
+        if 'user_id' not in session:
+            flash('Please login first', 'error')
+            return redirect(url_for('login'))
+    
+        # Fetch data for stats
+        from models import ProductStock, ProductTransaction
+        stock_items = ProductStock.query.all()
+        transactions = ProductTransaction.query.all()
+    
+        total_stock_items = len(stock_items)
+        total_transactions = len(transactions)
+        total_sales_value = sum(float(t.total_price) for t in transactions)
+    
+        return render_template('home.html',
+                           total_stock_items=total_stock_items,
+                           total_transactions=total_transactions,
+                           total_sales_value=total_sales_value)
+
     return app
 
 app = create_app()
