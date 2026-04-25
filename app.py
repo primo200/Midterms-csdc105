@@ -1,4 +1,4 @@
-from flask import Flask, app, render_template, request, redirect, url_for, flash, session
+from flask import Flask, app, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime
@@ -6,6 +6,7 @@ from config import Config
 import hashlib
 import base64
 import os
+
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
@@ -70,7 +71,15 @@ def create_app():
             total_price = db.Column(db.Numeric(10, 2), nullable=False)
             created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-        
+        class FuelTransaction(db.Model):
+            __tablename__ = 'members_fueltransaction'  
+            id = db.Column(db.Integer, primary_key=True)
+            machine_number = db.Column(db.Integer, nullable=False)
+            fuel_type = db.Column(db.String(50), nullable=False)
+            amount = db.Column(db.Numeric(10, 2), nullable=False)
+            liters = db.Column(db.Numeric(10, 3), nullable=False)
+            price_per_liter = db.Column(db.Numeric(6, 2), nullable=False)
+            created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     #Routes
     @app.route('/')
@@ -298,6 +307,67 @@ def create_app():
                            total_stock_items=total_stock_items,
                            total_transactions=total_transactions,
                            total_sales_value=total_sales_value)
+
+    @app.route('/fuel')
+    def fuel():
+        if 'user_id' not in session:
+            flash('Please login first', 'error')
+            return redirect(url_for('login'))
+        # FuelTransaction is already defined in the app context
+        fuel_transactions = FuelTransaction.query.order_by(FuelTransaction.created_at.desc()).all()
+        # Convert to list of dictionaries for JSON serialization
+        fuel_transactions_json = [
+            {
+                'id': t.id,
+                'machine_number': t.machine_number,
+                'fuel_type': t.fuel_type,
+                'amount': float(t.amount),
+                'liters': float(t.liters),
+                'price_per_liter': float(t.price_per_liter),
+                'created_at': t.created_at.isoformat() if t.created_at else None
+            }
+            for t in fuel_transactions
+        ]
+        return render_template('fuel.html', 
+                               fuel_transactions=fuel_transactions,
+                               fuel_transactions_json=fuel_transactions_json)
+
+    @app.route('/save_fuel_transaction', methods=['POST'])
+    def save_fuel_transaction():
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        data = request.get_json()
+        machine_number = data.get('machine_number')
+        fuel_type = data.get('fuel_type')
+        amount = data.get('amount')
+        liters = data.get('liters')
+        price_per_liter = data.get('price_per_liter')
+        if not all([machine_number, fuel_type, amount, liters, price_per_liter]):
+            return jsonify({'success': False, 'error': 'Missing fields'}), 400
+        new_trans = FuelTransaction(
+            machine_number=machine_number,
+            fuel_type=fuel_type,
+            amount=amount,
+            liters=liters,
+            price_per_liter=price_per_liter
+        )
+        db.session.add(new_trans)
+        db.session.commit()
+        return jsonify({'success': True, 'transaction_id': new_trans.id})
+
+    @app.route('/delete_fuel_transaction', methods=['DELETE'])
+    def delete_fuel_transaction():
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        trans_id = request.args.get('id')
+        if not trans_id:
+            return jsonify({'success': False, 'error': 'Missing id'}), 400
+        trans = FuelTransaction.query.get(trans_id)
+        if not trans:
+            return jsonify({'success': False, 'error': 'Transaction not found'}), 404
+        db.session.delete(trans)
+        db.session.commit()
+        return jsonify({'success': True})
 
     return app
 
