@@ -81,6 +81,14 @@ def create_app():
             price_per_liter = db.Column(db.Numeric(6, 2), nullable=False)
             created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+        class FuelPriceHistory(db.Model):
+            __tablename__ = 'fuel_price_history'
+            id = db.Column(db.Integer, primary_key=True)
+            fuel_type = db.Column(db.String(50), nullable=False)
+            old_price = db.Column(db.Numeric(6,2), nullable=False)
+            new_price = db.Column(db.Numeric(6,2), nullable=False)
+            changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
     #Routes
     @app.route('/')
     def index():
@@ -313,9 +321,9 @@ def create_app():
         if 'user_id' not in session:
             flash('Please login first', 'error')
             return redirect(url_for('login'))
-        # FuelTransaction is already defined in the app context
+
+        # 1. Get fuel transactions (existing code)
         fuel_transactions = FuelTransaction.query.order_by(FuelTransaction.created_at.desc()).all()
-        # Convert to list of dictionaries for JSON serialization
         fuel_transactions_json = [
             {
                 'id': t.id,
@@ -327,10 +335,21 @@ def create_app():
                 'created_at': t.created_at.isoformat() if t.created_at else None
             }
             for t in fuel_transactions
-        ]
-        return render_template('fuel.html', 
+        ] if fuel_transactions else []
+
+        # 2. Get the latest price for Unleaded and Diesel from the price history table
+        last_unleaded = FuelPriceHistory.query.filter_by(fuel_type='Unleaded').order_by(FuelPriceHistory.changed_at.desc()).first()
+        last_diesel = FuelPriceHistory.query.filter_by(fuel_type='Diesel').order_by(FuelPriceHistory.changed_at.desc()).first()
+        current_unleaded = last_unleaded.new_price if last_unleaded else 60.0
+        current_diesel = last_diesel.new_price if last_diesel else 55.0
+
+        # 3. Render the template with all variables
+        return render_template('fuel.html',
                                fuel_transactions=fuel_transactions,
-                               fuel_transactions_json=fuel_transactions_json)
+                               fuel_transactions_json=fuel_transactions_json,
+                               current_unleaded=current_unleaded,
+                               current_diesel=current_diesel)
+        
 
     @app.route('/save_fuel_transaction', methods=['POST'])
     def save_fuel_transaction():
@@ -368,6 +387,42 @@ def create_app():
         db.session.delete(trans)
         db.session.commit()
         return jsonify({'success': True})
+
+    @app.route('/get_fuel_prices', methods=['GET'])
+    def get_fuel_prices():
+        # Return current prices (from config or last price in history)
+        # For simplicity, you can store current prices in a separate table or use last entry.
+        # Here we'll return the latest price for each fuel type.
+        unleaded = FuelPriceHistory.query.filter_by(fuel_type='Unleaded').order_by(FuelPriceHistory.changed_at.desc()).first()
+        diesel = FuelPriceHistory.query.filter_by(fuel_type='Diesel').order_by(FuelPriceHistory.changed_at.desc()).first()
+        return jsonify({
+            'unleaded': float(unleaded.new_price) if unleaded else 60.0,
+            'diesel': float(diesel.new_price) if diesel else 55.0
+        })
+
+    @app.route('/update_fuel_price', methods=['POST'])
+    def update_fuel_price():
+        data = request.get_json()
+        fuel_type = data.get('fuel_type')
+        new_price = float(data.get('new_price'))
+        # Get current price (latest history entry)
+        last = FuelPriceHistory.query.filter_by(fuel_type=fuel_type).order_by(FuelPriceHistory.changed_at.desc()).first()
+        old_price = float(last.new_price) if last else (60.0 if fuel_type == 'Unleaded' else 55.0)
+        record = FuelPriceHistory(fuel_type=fuel_type, old_price=old_price, new_price=new_price)
+        db.session.add(record)
+        db.session.commit()
+        return jsonify({'success': True, 'old_price': old_price, 'new_price': new_price})
+
+    @app.route('/fuel_price_history', methods=['GET'])
+    def fuel_price_history():
+        history = FuelPriceHistory.query.order_by(FuelPriceHistory.changed_at.desc()).all()
+        return jsonify([{
+            'id': h.id,
+            'fuel_type': h.fuel_type,
+            'old_price': float(h.old_price),
+            'new_price': float(h.new_price),
+            'changed_at': h.changed_at.isoformat()
+        } for h in history])
 
     return app
 

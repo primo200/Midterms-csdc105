@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSRO – Fuel Management</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #87CEEB 0%, #0A1172 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(10, 17, 114, 0.4);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #0A1172;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: nowrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .header h1 i {
+            font-size: 28px;
+            color: #87CEEB;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: rgba(135, 206, 235, 0.2);
+            color: white;
+            border: 1px solid #87CEEB;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover,
+        .nav-btn.active {
+            background: #87CEEB;
+            color: #0A1172;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(135, 206, 235, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        .logout-btn {
+            background: #87CEEB;
+            color: #0A1172;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: #5FB0D0;
+            color: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        /* Machine Cards */
+        .machines-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .machine-card {
+            background: #F0F8FF;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .machine-title {
+            font-size: 1.6rem;
+            color: #0A1172;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #87CEEB;
+            padding-bottom: 10px;
+        }
+
+        .fuel-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .fuel-header {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #0A1172;
+            margin-bottom: 15px;
+        }
+
+        .add-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .add-form label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #0A1172;
+        }
+
+        .add-form input {
+            padding: 6px 10px;
+            border: 1px solid #87CEEB;
+            border-radius: 6px;
+            width: 120px;
+        }
+
+        .add-form button {
+            background-color: #0A1172;
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .add-form button:hover {
+            background-color: #87CEEB;
+            color: #0A1172;
+        }
+
+        .stock-info {
+            font-size: 0.9rem;
+            color: #0A1172;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stock-input-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .stock-input-group input {
+            width: 80px;
+            padding: 4px;
+        }
+
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .transaction-table th {
+            background: #d1ecf1;
+            color: #0A1172;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .total-row {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        /* Global table */
+        .global-table {
+            margin-top: 30px;
+        }
+
+        .global-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .global-table th {
+            background: #F0F8FF;
+            color: #0A1172;
+            padding: 12px;
+            border-bottom: 2px solid #87CEEB;
+        }
+
+        .global-table td {
+            padding: 10px;
+            border-bottom: 1px solid #87CEEB;
+            color: #555;
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-gas-pump"></i> TSRO Fuel Management</h1>
+            <div class="nav-buttons">
+                <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> Home</a>
+                <a href="{{ url_for('users_list') }}" class="nav-btn"><i class="fas fa-users"></i> Users</a>
+                <a href="{{ url_for('products') }}" class="nav-btn"><i class="fas fa-box"></i> Stock</a>
+                <a href="{{ url_for('transactions') }}" class="nav-btn"><i class="fas fa-receipt"></i> Transactions</a>
+                <a href="{{ url_for('fuel') }}" class="nav-btn active"><i class="fas fa-gas-pump"></i> Fuel</a>
+                <a href="{{ url_for('sales') }}" class="nav-btn"><i class="fas fa-chart-line"></i> Sales</a>
+            </div>
+            <div class="user-info">
+                <span><i class="fas fa-user"></i> {{ session.username }}</span>
+                <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <div class="machines-grid" id="machines-container"></div>
+
+            <div class="global-table">
+                <h2 style="color:#0A1172;"><i class="fas fa-list"></i> All Fuel Transactions</h2>
+                <div style="overflow-x: auto;">
+                    <table id="fuel-transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Machine</th>
+                                <th>Fuel Type</th>
+                                <th>Amount (₱)</th>
+                                <th>Liters</th>
+                                <th>Price/Liter</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trans in fuel_transactions %}
+                            <tr data-id="{{ trans.id }}">
+                                <td>{{ trans.machine_number }}</td>
+                                <td>{{ trans.fuel_type }}</td>
+                                <td>₱{{ "%.2f"|format(trans.amount) }}</td>
+                                <td>{{ "%.3f"|format(trans.liters) }}</td>
+                                <td>₱{{ "%.2f"|format(trans.price_per_liter) }}</td>
+                                <td>{{ trans.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td><button class="remove-btn"
+                                        onclick="deleteFuelTransaction({{ trans.id }})">Delete</button></td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align:center;">No fuel transactions yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global data from Flask
+        const fuelTransactions = {{ fuel_transactions_json| tojson }};
+        const csrfToken = "{{ csrf_token() }}";
+        const saveUrl = "{{ url_for('save_fuel_transaction') }}";
+        const deleteUrl = "{{ url_for('delete_fuel_transaction') }}";
+
+        const MAX_MACHINES = 3;
+        const FUEL_TYPES = ['Unleaded', 'Diesel'];
+
+        // Stock handling
+        function getStockKey(machine, fuel) {
+            return `fuel_stock_${machine}_${fuel}`;
+        }
+
+        function loadStock(machine, fuel) {
+            const val = localStorage.getItem(getStockKey(machine, fuel));
+            return val ? parseFloat(val) : 1000;
+        }
+
+        function saveStock(machine, fuel, stock) {
+            localStorage.setItem(getStockKey(machine, fuel), stock);
+        }
+
+        function updateStockDisplay(machine, fuel, stockElem, stockValue) {
+            stockElem.textContent = stockValue.toFixed(2);
+            if (stockValue <= 300) {
+                alert(`⚠️ Low stock! Machine ${machine} - ${fuel} has ${stockValue.toFixed(2)} L left.`);
+            }
+        }
+
+        function addStock(machine, fuel) {
+            const input = document.getElementById(`add-stock-${machine}-${fuel}`);
+            const addVal = parseFloat(input.value);
+            if (isNaN(addVal) || addVal <= 0) return;
+            const stockElem = document.getElementById(`stock-${machine}-${fuel}`);
+            let current = parseFloat(stockElem.textContent);
+            let newStock = current + addVal;
+            if (newStock > 1000) {
+                alert('Cannot exceed max capacity of 1000 liters.');
+                return;
+            }
+            stockElem.textContent = newStock.toFixed(2);
+            saveStock(machine, fuel, newStock);
+            input.value = '';
+        }
+
+        // Totals
+        function updateTotals(machine, fuel) {
+            const table = document.getElementById(`trans-table-${machine}-${fuel}`);
+            const tbody = table.querySelector('tbody');
+            let totalAmount = 0, totalLiters = 0;
+            for (let row of tbody.rows) {
+                const amount = parseFloat(row.cells[1].textContent.replace('₱', ''));
+                const liters = parseFloat(row.cells[2].textContent);
+                if (!isNaN(amount)) totalAmount += amount;
+                if (!isNaN(liters)) totalLiters += liters;
+            }
+            document.getElementById(`total-amount-${machine}-${fuel}`).textContent = `₱${totalAmount.toFixed(2)}`;
+            document.getElementById(`total-liters-${machine}-${fuel}`).textContent = totalLiters.toFixed(2);
+        }
+
+        // Remove local row (frontend only)
+        function removeLocalTransaction(btn, machine, fuel, liters) {
+            const row = btn.closest('tr');
+            row.remove();
+            const stockElem = document.getElementById(`stock-${machine}-${fuel}`);
+            let stock = parseFloat(stockElem.textContent);
+            stock += liters;
+            stockElem.textContent = stock.toFixed(2);
+            saveStock(machine, fuel, stock);
+            updateTotals(machine, fuel);
+        }
+
+        // Add transaction (frontend + backend)
+        async function addTransaction(event, machine, fuel) {
+            event.preventDefault();
+            const amountInput = document.getElementById(`amount-${machine}-${fuel}`);
+            const priceInput = document.getElementById(`price-${machine}-${fuel}`);
+            const amount = parseFloat(amountInput.value);
+            const price = parseFloat(priceInput.value);
+            if (isNaN(amount) || amount <= 0 || isNaN(price) || price <= 0) return;
+
+            const liters = amount / price;
+            const stockElem = document.getElementById(`stock-${machine}-${fuel}`);
+            let currentStock = parseFloat(stockElem.textContent);
+            if (currentStock < liters) {
+                alert(`Insufficient ${fuel}! Available: ${currentStock.toFixed(2)} L, needed: ${liters.toFixed(2)} L`);
+                return;
+            }
+
+            // Update local stock
+            const newStock = currentStock - liters;
+            stockElem.textContent = newStock.toFixed(2);
+            saveStock(machine, fuel, newStock);
+            if (newStock <= 300) alert(`⚠️ Low stock alert! Machine ${machine} - ${fuel} now ${newStock.toFixed(2)} L.`);
+
+            // Add row to local table
+            const table = document.getElementById(`trans-table-${machine}-${fuel}`);
+            const tbody = table.querySelector('tbody');
+            const rowCount = tbody.rows.length + 1;
+            const now = new Date();
+            const dateStr = now.toLocaleString();
+            const newRow = tbody.insertRow();
+            newRow.innerHTML = `
+                <td>${rowCount}</td>
+                <td>₱${amount.toFixed(2)}</td>
+                <td>${liters.toFixed(3)}</td>
+                <td><button class="remove-btn" onclick="removeLocalTransaction(this, ${machine}, '${fuel}', ${liters})">Remove</button></td>
+                <td>${dateStr}</td>
+            `;
+            updateTotals(machine, fuel);
+
+            // Send to backend
+            try {
+                const response = await fetch(saveUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        machine_number: machine,
+                        fuel_type: fuel,
+                        amount: amount,
+                        liters: liters,
+                        price_per_liter: price
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Append to global table (prepend)
+                    const globalTableBody = document.querySelector('#fuel-transactions-table tbody');
+                    if (globalTableBody.querySelector('td[colspan]')) globalTableBody.innerHTML = '';
+                    const newGlobalRow = globalTableBody.insertRow(0);
+                    newGlobalRow.setAttribute('data-id', data.transaction_id);
+                    newGlobalRow.innerHTML = `
+                        <td>${machine}</td>
+                        <td>${fuel}</td>
+                        <td>₱${amount.toFixed(2)}</td>
+                        <td>${liters.toFixed(3)}</td>
+                        <td>₱${price.toFixed(2)}</td>
+                        <td>${dateStr}</td>
+                        <td><button class="remove-btn" onclick="deleteFuelTransaction(${data.transaction_id})">Delete</button></td>
+                    `;
+                } else {
+                    alert('Error saving transaction: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error');
+            }
+            amountInput.value = '';
+        }
+
+        // Delete transaction from DB and global table
+        async function deleteFuelTransaction(transId) {
+            if (!confirm('Delete this fuel transaction?')) return;
+            try {
+                const response = await fetch(deleteUrl + '?id=' + transId, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const row = document.querySelector(`#fuel-transactions-table tr[data-id="${transId}"]`);
+                    if (row) row.remove();
+                } else {
+                    alert('Failed: ' + data.error);
+                }
+            } catch (err) {
+                alert('Error deleting');
+            }
+        }
+
+        // Build machine tables dynamically
+        function buildMachines() {
+            const container = document.getElementById('machines-container');
+            container.innerHTML = '';
+            for (let m = 1; m <= MAX_MACHINES; m++) {
+                const machineDiv = document.createElement('div');
+                machineDiv.className = 'machine-card';
+                machineDiv.innerHTML = `<div class="machine-title"><i class="fas fa-tachometer-alt"></i> Machine ${m}</div>`;
+                for (let fuel of FUEL_TYPES) {
+                    const stock = loadStock(m, fuel);
+                    machineDiv.innerHTML += `
+                        <div class="fuel-card">
+                            <div class="fuel-header">${fuel}</div>
+                            <div class="stock-info">
+                                <span>Stock: <strong id="stock-${m}-${fuel}">${stock.toFixed(2)}</strong> L</span>
+                                <div class="stock-input-group">
+                                    <input type="number" id="add-stock-${m}-${fuel}" step="10" placeholder="Add L">
+                                    <button onclick="addStock(${m}, '${fuel}')">+</button>
+                                </div>
+                            </div>
+                            <form class="add-form" onsubmit="addTransaction(event, ${m}, '${fuel}')">
+                                <div><label>Amount (₱)</label><input type="number" step="0.01" id="amount-${m}-${fuel}" required></div>
+                                <div><label>Price/L (₱)</label><input type="number" step="0.01" id="price-${m}-${fuel}" value="60" required></div>
+                                <button type="submit">Sell</button>
+                            </form>
+                            <table class="transaction-table" id="trans-table-${m}-${fuel}">
+                                <thead><tr><th>#</th><th>Amount</th><th>Liters</th><th>Remove</th><th>Date</th></tr></thead>
+                                <tbody></tbody>
+                                <tfoot>
+                                    <tr class="total-row"><td colspan="2">Total Amount:</td><td id="total-amount-${m}-${fuel}">₱0.00</td></tr>
+                                    <tr class="total-row"><td colspan="2">Total Liters:</td><td id="total-liters-${m}-${fuel}">0.00</td></tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    `;
+                }
+                container.appendChild(machineDiv);
+            }
+        }
+
+        // Populate local machine tables from existing global transactions
+        function populateMachineTables() {
+            // Clear existing tbody rows
+            for (let m = 1; m <= MAX_MACHINES; m++) {
+                for (let fuel of FUEL_TYPES) {
+                    const tbody = document.querySelector(`#trans-table-${m}-${fuel} tbody`);
+                    if (tbody) tbody.innerHTML = '';
+                }
+            }
+            // Iterate transactions and insert into correct machine/fuel
+            for (let t of fuelTransactions) {
+                const m = t.machine_number;
+                const fuel = t.fuel_type;
+                if (m < 1 || m > MAX_MACHINES) continue;
+                const tbody = document.querySelector(`#trans-table-${m}-${fuel} tbody`);
+                if (tbody) {
+                    const rowCount = tbody.rows.length + 1;
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${rowCount}</td>
+                        <td>₱${parseFloat(t.amount).toFixed(2)}</td>
+                        <td>${parseFloat(t.liters).toFixed(3)}</td>
+                        <td><button class="remove-btn" onclick="removeLocalTransaction(this, ${m}, '${fuel}', ${parseFloat(t.liters)})">Remove</button></td>
+                        <td>${new Date(t.created_at).toLocaleString()}</td>
+                    `;
+                }
+            }
+            // Recalculate totals
+            for (let m = 1; m <= MAX_MACHINES; m++) {
+                for (let fuel of FUEL_TYPES) {
+                    updateTotals(m, fuel);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            buildMachines();
+            populateMachineTables();
+        });
+    </script>
+</body>
+
+</html>
