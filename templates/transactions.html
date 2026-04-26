@@ -292,28 +292,30 @@
 
 <body>
     <div class="container">
-        <div class="header">
-            <h1>
-                <i class="fas fa-exchange-alt"></i>
-                Product Transactions
-            </h1>
+        <div class="header" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>
+                    <i class="fas fa-exchange-alt"></i>
+                    Product & Fuel Transactions
+                </h1>
+                <div class="user-info">
+                    <span>
+                        <i class="fas fa-user"></i>
+                        {{ session.username }}
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
             <div class="nav-buttons">
                 <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> Home</a>
                 <a href="{{ url_for('users_list') }}" class="nav-btn"><i class="fas fa-users"></i> Users</a>
                 <a href="{{ url_for('products') }}" class="nav-btn"><i class="fas fa-box"></i> Stock</a>
-                <a href="{{ url_for('transactions') }}" class="nav-btn active"><i class="fas fa-receipt"></i>
-                    Transactions</a>
+                <a href="{{ url_for('transactions') }}" class="nav-btn active"><i class="fas fa-receipt"></i> Transactions</a>
                 <a href="{{ url_for('fuel') }}" class="nav-btn"><i class="fas fa-gas-pump"></i> Fuel</a>
+                <a href="{{ url_for('history') }}" class="nav-btn"><i class="fas fa-history"></i> History</a>
                 <a href="{{ url_for('sales') }}" class="nav-btn"><i class="fas fa-chart-line"></i> Sales</a>
-            </div>
-            <div class="user-info">
-                <span>
-                    <i class="fas fa-user"></i>
-                    {{ session.username }}
-                </span>
-                <a href="{{ url_for('logout') }}" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
             </div>
         </div>
 

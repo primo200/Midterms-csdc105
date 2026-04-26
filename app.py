@@ -528,6 +528,19 @@ def create_app():
             'changed_at': h.changed_at.isoformat()
         } for h in history])
 
+    @app.route('/history')
+    def history():
+        if 'user_id' not in session:
+            flash('Please login first', 'error')
+            return redirect(url_for('login'))
+        last_unleaded = FuelPriceHistory.query.filter_by(fuel_type='Unleaded').order_by(FuelPriceHistory.changed_at.desc()).first()
+        last_diesel = FuelPriceHistory.query.filter_by(fuel_type='Diesel').order_by(FuelPriceHistory.changed_at.desc()).first()
+        current_unleaded = last_unleaded.new_price if last_unleaded else 60.0
+        current_diesel = last_diesel.new_price if last_diesel else 55.0
+        return render_template('history.html',
+                               current_unleaded=current_unleaded,
+                               current_diesel=current_diesel)
+
     return app
 
 app = create_app()

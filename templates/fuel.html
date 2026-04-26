@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TSRO – Fuel Management</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -238,16 +236,6 @@
             color: #0A1172;
         }
 
-        .remove-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.75rem;
-        }
-
         .total-row {
             background-color: #f0f0f0;
             font-weight: bold;
@@ -273,73 +261,6 @@
             color: #721c24;
         }
 
-        .price-card {
-            background: #F0F8FF;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .price-control {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .price-item {
-            background: white;
-            border-radius: 12px;
-            padding: 15px;
-            flex: 1;
-            text-align: center;
-        }
-
-        .price-item h3 {
-            color: #0A1172;
-            margin-bottom: 10px;
-        }
-
-        .price-item .current {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #0A1172;
-        }
-
-        .price-item input {
-            padding: 6px 12px;
-            width: 120px;
-            margin: 10px 5px;
-        }
-
-        .price-item button {
-            background: #0A1172;
-            color: white;
-            border: none;
-            padding: 6px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        .history-table th,
-        .history-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-
-        .history-table th {
-            background: #d1ecf1;
-            color: #0A1172;
-        }
-
         .loading {
             text-align: center;
             color: #0A1172;
@@ -351,22 +272,29 @@
 
 <body>
     <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-gas-pump"></i> TSRO Fuel Management</h1>
+        <div class="header" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1><i class="fas fa-gas-pump"></i> TSRO Fuel Management</h1>
+                <div class="user-info">
+                    <span>
+                        <i class="fas fa-user"></i>
+                        {{ session.username }}
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
             <div class="nav-buttons">
                 <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> Home</a>
                 <a href="{{ url_for('users_list') }}" class="nav-btn"><i class="fas fa-users"></i> Users</a>
                 <a href="{{ url_for('products') }}" class="nav-btn"><i class="fas fa-box"></i> Stock</a>
                 <a href="{{ url_for('transactions') }}" class="nav-btn"><i class="fas fa-receipt"></i> Transactions</a>
                 <a href="{{ url_for('fuel') }}" class="nav-btn active"><i class="fas fa-gas-pump"></i> Fuel</a>
+                <a href="{{ url_for('history') }}" class="nav-btn"><i class="fas fa-history"></i> History</a>
                 <a href="{{ url_for('sales') }}" class="nav-btn"><i class="fas fa-chart-line"></i> Sales</a>
             </div>
-            <div class="user-info">
-                <span><i class="fas fa-user"></i> {{ session.username }}</span>
-                <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-            </div>
         </div>
-
         <div class="content">
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -378,49 +306,6 @@
             {% endif %}
             {% endwith %}
 
-            <!-- Fuel Price Management -->
-            <div id="fuelPriceApp" class="price-card">
-                <h2 style="color:#0A1172; margin-bottom:15px;"><i class="fas fa-chart-line"></i> Fuel Price Management
-                </h2>
-                <div class="price-control">
-                    <div class="price-item">
-                        <h3>⛽ Unleaded</h3>
-                        <p class="current">₱{{ "%.2f"|format(current_unleaded) }}</p>
-                        <input type="number" id="new_unleaded" step="0.01" placeholder="New price">
-                        <button @click="updatePrice('Unleaded')">Update</button>
-                    </div>
-                    <div class="price-item">
-                        <h3>🛢️ Diesel</h3>
-                        <p class="current">₱{{ "%.2f"|format(current_diesel) }}</p>
-                        <input type="number" id="new_diesel" step="0.01" placeholder="New price">
-                        <button @click="updatePrice('Diesel')">Update</button>
-                    </div>
-                </div>
-                <canvas id="priceChart" style="max-height:300px; margin-bottom:20px;"></canvas>
-                <h3><i class="fas fa-history"></i> Price Change Log</h3>
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th>Fuel Type</th>
-                            <th>Old Price</th>
-                            <th>New Price</th>
-                            <th>Changed At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="record in history" :key="record.id">
-                            <td v-text="record.fuel_type"></td>
-                            <td v-text="'₱' + record.old_price"></td>
-                            <td v-text="'₱' + record.new_price"></td>
-                            <td v-text="formatDate(record.changed_at)"></td>
-                        </tr>
-                        <tr v-if="history.length === 0">
-                            <td colspan="4">No price changes recorded yet.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
             <!-- Machine Cards -->
             <div class="machines-grid" id="machines-container">
                 <p class="loading">Loading machines...</p>
@@ -429,15 +314,11 @@
     </div>
 
     <script>
-        Vue.config.delimiters = ['[[', ']]'];
-
         const csrfToken = "{{ csrf_token() }}";
         const MAX_MACHINES = 2;
         const FUEL_TYPES = ['Unleaded', 'Diesel'];
 
-        // Stock state — keyed by "machine-fuel"
         const stockState = {};
-        // Per-machine-fuel transaction rows
         const transactionRows = {};
 
         async function loadAllStock() {
@@ -451,7 +332,6 @@
         async function loadAllTransactions() {
             const res = await fetch('/get_fuel_transactions');
             const data = await res.json();
-            // Group by machine+fuel
             for (const key in transactionRows) transactionRows[key] = [];
             for (const t of data) {
                 const key = `${t.machine_number}-${t.fuel_type}`;
@@ -499,7 +379,6 @@
             const input = document.getElementById(`add-stock-${machine}-${fuel}`);
             const addVal = parseFloat(input.value);
             if (isNaN(addVal) || addVal <= 0) { alert('Enter a valid amount'); return; }
-
             const res = await fetch('/add_fuel_stock', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
@@ -532,19 +411,12 @@
             const data = await res.json();
 
             if (data.success) {
-                // Update stock display
                 stockState[`${machine}-${fuel}`] = data.new_stock;
                 renderStockDisplay(machine, fuel);
                 if (data.new_stock <= 300) alert(`⚠️ Low stock! Machine ${machine} - ${fuel}: ${data.new_stock.toFixed(2)} L remaining`);
-
-                // Append new transaction row
                 const key = `${machine}-${fuel}`;
                 if (!transactionRows[key]) transactionRows[key] = [];
-                transactionRows[key].unshift({
-                    amount: amount,
-                    liters: liters,
-                    created_at: data.created_at
-                });
+                transactionRows[key].unshift({ amount, liters, created_at: data.created_at });
                 renderTransactionTable(machine, fuel);
                 amountInput.value = '';
             } else {
@@ -602,74 +474,7 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            initPage();
-
-            // Vue for price management
-            new Vue({
-                el: '#fuelPriceApp',
-                data: { history: [] },
-                mounted() {
-                    this.loadHistory();
-                    this.renderChart();
-                },
-                methods: {
-                    formatDate(value) {
-                        if (!value) return '';
-                        return new Date(value).toLocaleString();
-                    },
-                    async loadHistory() {
-                        const res = await fetch('/fuel_price_history');
-                        this.history = await res.json();
-                    },
-                    async updatePrice(fuelType) {
-                        const inputId = fuelType === 'Unleaded' ? 'new_unleaded' : 'new_diesel';
-                        const newPrice = parseFloat(document.getElementById(inputId).value);
-                        if (isNaN(newPrice)) return alert('Enter a valid price');
-                        const res = await fetch('/update_fuel_price', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                            body: JSON.stringify({ fuel_type: fuelType, new_price: newPrice })
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                            alert(`Price updated: ₱${data.old_price} → ₱${data.new_price}`);
-                            await this.loadHistory();
-                            await this.renderChart();
-                            document.getElementById(inputId).value = '';
-                        } else {
-                            alert('Error updating price');
-                        }
-                    },
-                    async renderChart() {
-                        const res = await fetch('/fuel_price_history');
-                        const records = await res.json();
-                        const unleaded = records.filter(r => r.fuel_type === 'Unleaded').reverse();
-                        const diesel = records.filter(r => r.fuel_type === 'Diesel').reverse();
-                        const allDates = [
-                            ...unleaded.map(r => r.changed_at.split('T')[0]),
-                            ...diesel.map(r => r.changed_at.split('T')[0])
-                        ];
-                        const labels = [...new Set(allDates)].sort();
-                        const ctx = document.getElementById('priceChart').getContext('2d');
-                        if (window.priceChart && typeof window.priceChart.destroy === 'function') {
-                            window.priceChart.destroy();
-                        }
-                        window.priceChart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels,
-                                datasets: [
-                                    { label: 'Unleaded', data: labels.map(d => { let r = unleaded.find(u => u.changed_at.split('T')[0] === d); return r ? r.new_price : null; }), borderColor: '#0A1172', fill: false, tension: 0.1 },
-                                    { label: 'Diesel', data: labels.map(d => { let r = diesel.find(u => u.changed_at.split('T')[0] === d); return r ? r.new_price : null; }), borderColor: '#87CEEB', fill: false, tension: 0.1 }
-                                ]
-                            },
-                            options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ₱${ctx.raw}` } } } }
-                        });
-                    }
-                }
-            });
-        });
+        document.addEventListener('DOMContentLoaded', initPage);
     </script>
 </body>
 
