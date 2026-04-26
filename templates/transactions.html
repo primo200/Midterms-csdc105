@@ -73,11 +73,7 @@
             transition: all 0.3s ease;
         }
 
-        .nav-btn:hover {
-            background: #87CEEB;
-            color: #0A1172;
-        }
-
+        .nav-btn:hover,
         .nav-btn.active {
             background: #87CEEB;
             color: #0A1172;
@@ -287,6 +283,29 @@
             margin-bottom: 5px;
             color: #0A1172;
         }
+
+        .hidden-row {
+            display: none;
+        }
+
+        .toggle-btn {
+            background: #0A1172;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 12px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .toggle-btn:hover {
+            background: #87CEEB;
+            color: #0A1172;
+        }
     </style>
 </head>
 
@@ -299,20 +318,16 @@
                     Product & Fuel Transactions
                 </h1>
                 <div class="user-info">
-                    <span>
-                        <i class="fas fa-user"></i>
-                        {{ session.username }}
-                    </span>
-                    <a href="{{ url_for('logout') }}" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+                    <span><i class="fas fa-user"></i> {{ session.username }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
             <div class="nav-buttons">
                 <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> Home</a>
                 <a href="{{ url_for('users_list') }}" class="nav-btn"><i class="fas fa-users"></i> Users</a>
                 <a href="{{ url_for('products') }}" class="nav-btn"><i class="fas fa-box"></i> Stock</a>
-                <a href="{{ url_for('transactions') }}" class="nav-btn active"><i class="fas fa-receipt"></i> Transactions</a>
+                <a href="{{ url_for('transactions') }}" class="nav-btn active"><i class="fas fa-receipt"></i>
+                    Transactions</a>
                 <a href="{{ url_for('fuel') }}" class="nav-btn"><i class="fas fa-gas-pump"></i> Fuel</a>
                 <a href="{{ url_for('history') }}" class="nav-btn"><i class="fas fa-history"></i> History</a>
                 <a href="{{ url_for('sales') }}" class="nav-btn"><i class="fas fa-chart-line"></i> Sales</a>
@@ -320,7 +335,6 @@
         </div>
 
         <div class="content">
-            <!-- Flash messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="flash-messages">
@@ -335,15 +349,18 @@
             {% endif %}
             {% endwith %}
 
-            <!-- Statistics: total transactions -->
             <div class="stats-container">
                 <div class="stat-card">
-                    <h3><i class="fas fa-receipt"></i> Total Transactions</h3>
+                    <h3><i class="fas fa-receipt"></i> Total Product Transactions</h3>
                     <div class="stat-number">{{ transactions|length }}</div>
                 </div>
                 <div class="stat-card">
                     <h3><i class="fas fa-money-bill-wave"></i> Total Sales Value</h3>
                     <div class="stat-number">₱{{ "%.2f"|format(total_amount) }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3><i class="fas fa-gas-pump"></i> Total Fuel Transactions</h3>
+                    <div class="stat-number">{{ fuel_transactions|length }}</div>
                 </div>
             </div>
 
@@ -355,7 +372,6 @@
                 </div>
                 <form method="POST" action="{{ url_for('add_product_transaction') }}" class="add-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
                     <div class="form-group">
                         <label>Product</label>
                         <select name="name" required>
@@ -365,22 +381,19 @@
                             {% endfor %}
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label>Quantity</label>
                         <input type="number" name="quantity" step="1" min="1" required>
                     </div>
-
                     <div class="form-group">
                         <label>Price per Unit (₱)</label>
                         <input type="number" name="price_per_unit" step="0.01" min="0.01" required>
                     </div>
-
                     <button type="submit"><i class="fas fa-save"></i> Add Transaction</button>
                 </form>
             </div>
 
-            <!-- Transactions Table -->
+            <!-- Product Transactions Table -->
             <div class="section-title">
                 <i class="fas fa-list"></i>
                 All Product Transactions
@@ -400,7 +413,7 @@
                     </thead>
                     <tbody>
                         {% for transaction in transactions %}
-                        <tr>
+                        <tr class="{% if loop.index > 5 %}hidden-row product-extra{% endif %}">
                             <td>{{ loop.index }}</td>
                             <td>{{ transaction.name }}</td>
                             <td>{{ transaction.quantity }}</td>
@@ -411,7 +424,7 @@
                             <td>
                                 <form method="POST"
                                     action="{{ url_for('delete_product_transaction', transaction_id=transaction.id) }}"
-                                    style="display: inline;">
+                                    style="display:inline;">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="remove-button">Delete</button>
                                 </form>
@@ -419,13 +432,19 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" style="text-align: center;">No transactions found</td>
+                            <td colspan="7" style="text-align:center;">No transactions found</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            <!-- Fuel Transactions -->
+            {% if transactions|length > 5 %}
+            <button class="toggle-btn" onclick="toggleRows('product', this)">
+                <i class="fas fa-chevron-down" id="product-icon"></i> Show All ({{ transactions|length }} records)
+            </button>
+            {% endif %}
+
+            <!-- Fuel Transactions Table -->
             <div class="section-title" style="margin-top: 40px;">
                 <i class="fas fa-gas-pump"></i>
                 All Fuel Transactions
@@ -446,7 +465,7 @@
                     </thead>
                     <tbody>
                         {% for trans in fuel_transactions %}
-                        <tr>
+                        <tr class="{% if loop.index > 5 %}hidden-row fuel-extra{% endif %}">
                             <td>{{ loop.index }}</td>
                             <td>Machine {{ trans.machine_number }}</td>
                             <td>{{ trans.fuel_type }}</td>
@@ -457,7 +476,7 @@
                             <td>
                                 <form method="POST"
                                     action="{{ url_for('delete_fuel_transaction_form', trans_id=trans.id) }}"
-                                    style="display: inline;">
+                                    style="display:inline;">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="remove-button">Delete</button>
                                 </form>
@@ -471,9 +490,33 @@
                     </tbody>
                 </table>
             </div>
+            {% if fuel_transactions|length > 5 %}
+            <button class="toggle-btn" onclick="toggleRows('fuel', this)">
+                <i class="fas fa-chevron-down" id="fuel-icon"></i> Show All ({{ fuel_transactions|length }} records)
+            </button>
+            {% endif %}
 
         </div>
     </div>
+
+    <script>
+        const state = { product: false, fuel: false };
+
+        function toggleRows(type, btn) {
+            state[type] = !state[type];
+            const extraRows = document.querySelectorAll(`.${type}-extra`);
+            const total = extraRows.length + 5;
+
+            extraRows.forEach(row => {
+                // Set inline style to override the hidden-row class
+                row.style.display = state[type] ? 'table-row' : 'none';
+            });
+
+            const icon = btn.querySelector('i');
+            icon.className = state[type] ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+            btn.innerHTML = `<i class="${icon.className}" id="${type}-icon"></i> ${state[type] ? 'Show Less' : 'Show All (' + total + ' records)'}`;
+        }
+    </script>
 </body>
 
 </html>

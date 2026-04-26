@@ -303,7 +303,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="record in history" :key="record.id">
+                        <tr v-for="(record, index) in visibleHistory" :key="record.id">
                             <td v-text="record.fuel_type"></td>
                             <td v-text="'₱' + record.old_price"></td>
                             <td v-text="'₱' + record.new_price"></td>
@@ -314,6 +314,13 @@
                         </tr>
                     </tbody>
                 </table>
+                <div v-if="history.length > 5" style="text-align: center; margin-top: 12px;">
+                    <button @click="showAll = !showAll"
+                        style="background: #0A1172; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                        <i :class="showAll ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                        Show All
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -326,7 +333,12 @@
         document.addEventListener('DOMContentLoaded', function () {
             new Vue({
                 el: '#fuelPriceApp',
-                data: { history: [] },
+                data: { history: [], showAll: false },
+                computed: {
+                    visibleHistory() {
+                        return this.showAll ? this.history : this.history.slice(0, 5);
+                    }
+                },
                 mounted() {
                     this.loadHistory();
                     this.renderChart();
