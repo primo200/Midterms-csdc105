@@ -182,13 +182,25 @@ def create_app():
             return redirect(url_for('login'))
         stock_items = ProductStock.query.all()
         transactions = ProductTransaction.query.order_by(ProductTransaction.created_at.desc()).all()
+        fuel_transactions = FuelTransaction.query.order_by(FuelTransaction.created_at.desc()).all()
         total_quantity = sum(t.quantity for t in transactions)
         total_amount = sum(float(t.total_price) for t in transactions)
         return render_template('transactions.html',
                             stock_items=stock_items,
                             transactions=transactions,
+                            fuel_transactions=fuel_transactions,
                             total_quantity=total_quantity,
                             total_amount=total_amount)
+
+    @app.route('/delete_fuel_transaction_form/<int:trans_id>', methods=['POST'])
+    def delete_fuel_transaction_form(trans_id):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        trans = FuelTransaction.query.get_or_404(trans_id)
+        db.session.delete(trans)
+        db.session.commit()
+        flash('Fuel transaction deleted', 'success')
+        return redirect(url_for('transactions'))
 
     @app.route('/add_product_stock', methods=['POST'])
     def add_product_stock():

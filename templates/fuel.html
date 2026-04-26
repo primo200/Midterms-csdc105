@@ -437,43 +437,7 @@
             <!-- Machine sales and stock (existing) -->
             <div class="machines-grid" id="machines-container"></div>
 
-            <!-- Global fuel transactions table (existing) -->
-            <div class="global-table">
-                <h2 style="color:#0A1172;"><i class="fas fa-list"></i> All Fuel Transactions</h2>
-                <div style="overflow-x: auto;">
-                    <table id="fuel-transactions-table">
-                        <thead>
-                            <tr>
-                                <th>Machine</th>
-                                <th>Fuel Type</th>
-                                <th>Amount (₱)</th>
-                                <th>Liters</th>
-                                <th>Price/Liter</th>
-                                <th>Date</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for trans in fuel_transactions %}
-                            <tr data-id="{{ trans.id }}">
-                                <td>{{ trans.machine_number }}</td>
-                                <td>{{ trans.fuel_type }}</td>
-                                <td>₱{{ "%.2f"|format(trans.amount) }}</td>
-                                <td>{{ "%.3f"|format(trans.liters) }}</td>
-                                <td>₱{{ "%.2f"|format(trans.price_per_liter) }}</td>
-                                <td>{{ trans.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                <td><button class="remove-btn"
-                                        onclick="deleteFuelTransaction({{ trans.id }})">Delete</button></td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="7" style="text-align:center;">No fuel transactions yet.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            
         </div>
     </div>
 
