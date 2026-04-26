@@ -6,11 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TSRO – Fuel Management</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <!-- Vue and Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
-        /* ========== existing styles (keep all your CSS) ========== */
         * {
             margin: 0;
             padding: 0;
@@ -216,6 +214,11 @@
             padding: 4px;
         }
 
+        .stock-low {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
         .transaction-table {
             width: 100%;
             border-collapse: collapse;
@@ -250,28 +253,6 @@
             font-weight: bold;
         }
 
-        .global-table {
-            margin-top: 30px;
-        }
-
-        .global-table table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .global-table th {
-            background: #F0F8FF;
-            color: #0A1172;
-            padding: 12px;
-            border-bottom: 2px solid #87CEEB;
-        }
-
-        .global-table td {
-            padding: 10px;
-            border-bottom: 1px solid #87CEEB;
-            color: #555;
-        }
-
         .flash-messages {
             margin-bottom: 20px;
         }
@@ -292,7 +273,6 @@
             color: #721c24;
         }
 
-        /* new styles for price management */
         .price-card {
             background: #F0F8FF;
             border-radius: 16px;
@@ -359,6 +339,13 @@
             background: #d1ecf1;
             color: #0A1172;
         }
+
+        .loading {
+            text-align: center;
+            color: #0A1172;
+            padding: 10px;
+            font-style: italic;
+        }
     </style>
 </head>
 
@@ -391,9 +378,9 @@
             {% endif %}
             {% endwith %}
 
-            <!-- ========== NEW: Fuel Price Management ========== -->
+            <!-- Fuel Price Management -->
             <div id="fuelPriceApp" class="price-card">
-                <h2 style="color:#0A1172; margin-bottom: 15px;"><i class="fas fa-chart-line"></i> Fuel Price Management
+                <h2 style="color:#0A1172; margin-bottom:15px;"><i class="fas fa-chart-line"></i> Fuel Price Management
                 </h2>
                 <div class="price-control">
                     <div class="price-item">
@@ -409,7 +396,7 @@
                         <button @click="updatePrice('Diesel')">Update</button>
                     </div>
                 </div>
-                <canvas id="priceChart" style="max-height: 300px; margin-bottom: 20px;"></canvas>
+                <canvas id="priceChart" style="max-height:300px; margin-bottom:20px;"></canvas>
                 <h3><i class="fas fa-history"></i> Price Change Log</h3>
                 <table class="history-table">
                     <thead>
@@ -425,7 +412,7 @@
                             <td v-text="record.fuel_type"></td>
                             <td v-text="'₱' + record.old_price"></td>
                             <td v-text="'₱' + record.new_price"></td>
-                            <td v-text="record.changed_at"></td>
+                            <td v-text="formatDate(record.changed_at)"></td>
                         </tr>
                         <tr v-if="history.length === 0">
                             <td colspan="4">No price changes recorded yet.</td>
@@ -434,212 +421,206 @@
                 </table>
             </div>
 
-            <!-- Machine sales and stock (existing) -->
-            <div class="machines-grid" id="machines-container"></div>
-
-            
+            <!-- Machine Cards -->
+            <div class="machines-grid" id="machines-container">
+                <p class="loading">Loading machines...</p>
+            </div>
         </div>
     </div>
 
-    <!-- hidden element for transaction JSON (unchanged) -->
-    <div id="fuel-transactions-data" style="display: none;" data-json="{{ fuel_transactions_json|tojson }}"></div>
-
     <script>
         Vue.config.delimiters = ['[[', ']]'];
-        document.addEventListener('DOMContentLoaded', function () {
-            // ---------- Parse fuel transactions safely ----------
-            let fuelTransactions = [];
-            try {
-                const dataAttr = document.getElementById('fuel-transactions-data').getAttribute('data-json');
-                if (dataAttr && dataAttr.trim() !== '') {
-                    fuelTransactions = JSON.parse(dataAttr);
-                }
-            } catch (e) {
-                console.error("Failed to parse fuel transactions JSON", e);
-                fuelTransactions = [];
+
+        const csrfToken = "{{ csrf_token() }}";
+        const MAX_MACHINES = 2;
+        const FUEL_TYPES = ['Unleaded', 'Diesel'];
+
+        // Stock state — keyed by "machine-fuel"
+        const stockState = {};
+        // Per-machine-fuel transaction rows
+        const transactionRows = {};
+
+        async function loadAllStock() {
+            const res = await fetch('/get_fuel_stock');
+            const data = await res.json();
+            for (const s of data) {
+                stockState[`${s.machine_number}-${s.fuel_type}`] = s.stock_liters;
             }
+        }
 
-            const csrfToken = "{{ csrf_token() }}";
-            const saveUrl = "{{ url_for('save_fuel_transaction') }}";
-            const deleteUrl = "{{ url_for('delete_fuel_transaction') }}";
-            const MAX_MACHINES = 3;
-            const FUEL_TYPES = ['Unleaded', 'Diesel'];
+        async function loadAllTransactions() {
+            const res = await fetch('/get_fuel_transactions');
+            const data = await res.json();
+            // Group by machine+fuel
+            for (const key in transactionRows) transactionRows[key] = [];
+            for (const t of data) {
+                const key = `${t.machine_number}-${t.fuel_type}`;
+                if (!transactionRows[key]) transactionRows[key] = [];
+                transactionRows[key].push(t);
+            }
+        }
 
-            // ---------- Stock & machine functions (keep your existing code) ----------
-            function getStockKey(machine, fuel) { return `fuel_stock_${machine}_${fuel}`; }
-            function loadStock(machine, fuel) { const val = localStorage.getItem(getStockKey(machine, fuel)); return val ? parseFloat(val) : 1000; }
-            function saveStock(machine, fuel, stock) { localStorage.setItem(getStockKey(machine, fuel), stock); }
-            function addStock(machine, fuel) {
-                const input = document.getElementById(`add-stock-${machine}-${fuel}`);
-                const addVal = parseFloat(input.value);
-                if (isNaN(addVal) || addVal <= 0) return;
-                const stockElem = document.getElementById(`stock-${machine}-${fuel}`);
-                let current = parseFloat(stockElem.textContent);
-                let newStock = current + addVal;
-                if (newStock > 1000) { alert('Cannot exceed max capacity of 1000 liters.'); return; }
-                stockElem.textContent = newStock.toFixed(2);
-                saveStock(machine, fuel, newStock);
+        function renderStockDisplay(machine, fuel) {
+            const key = `${machine}-${fuel}`;
+            const stock = stockState[key] ?? 0;
+            const elem = document.getElementById(`stock-${machine}-${fuel}`);
+            if (elem) {
+                elem.textContent = parseFloat(stock).toFixed(2);
+                elem.className = stock <= 300 ? 'stock-low' : '';
+            }
+        }
+
+        function renderTransactionTable(machine, fuel) {
+            const key = `${machine}-${fuel}`;
+            const tbody = document.querySelector(`#trans-table-${machine}-${fuel} tbody`);
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const rows = transactionRows[key] || [];
+            let totalAmount = 0, totalLiters = 0;
+            rows.forEach((t, i) => {
+                totalAmount += parseFloat(t.amount);
+                totalLiters += parseFloat(t.liters);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>₱${parseFloat(t.amount).toFixed(2)}</td>
+                    <td>${parseFloat(t.liters).toFixed(3)}</td>
+                    <td>${new Date(t.created_at).toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            const totalAmountEl = document.getElementById(`total-amount-${machine}-${fuel}`);
+            const totalLitersEl = document.getElementById(`total-liters-${machine}-${fuel}`);
+            if (totalAmountEl) totalAmountEl.textContent = `₱${totalAmount.toFixed(2)}`;
+            if (totalLitersEl) totalLitersEl.textContent = totalLiters.toFixed(3);
+        }
+
+        async function addStock(machine, fuel) {
+            const input = document.getElementById(`add-stock-${machine}-${fuel}`);
+            const addVal = parseFloat(input.value);
+            if (isNaN(addVal) || addVal <= 0) { alert('Enter a valid amount'); return; }
+
+            const res = await fetch('/add_fuel_stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ machine_number: machine, fuel_type: fuel, add_liters: addVal })
+            });
+            const data = await res.json();
+            if (data.success) {
+                stockState[`${machine}-${fuel}`] = data.new_stock;
+                renderStockDisplay(machine, fuel);
                 input.value = '';
+            } else {
+                alert(data.error);
             }
-            function updateTotals(machine, fuel) {
-                const table = document.getElementById(`trans-table-${machine}-${fuel}`);
-                const tbody = table.querySelector('tbody');
-                let totalAmount = 0, totalLiters = 0;
-                for (let row of tbody.rows) {
-                    const amount = parseFloat(row.cells[1].textContent.replace('₱', ''));
-                    const liters = parseFloat(row.cells[2].textContent);
-                    if (!isNaN(amount)) totalAmount += amount;
-                    if (!isNaN(liters)) totalLiters += liters;
-                }
-                document.getElementById(`total-amount-${machine}-${fuel}`).textContent = `₱${totalAmount.toFixed(2)}`;
-                document.getElementById(`total-liters-${machine}-${fuel}`).textContent = totalLiters.toFixed(2);
-            }
-            function removeLocalTransaction(btn, machine, fuel, liters) {
-                const row = btn.closest('tr');
-                row.remove();
-                const stockElem = document.getElementById(`stock-${machine}-${fuel}`);
-                let stock = parseFloat(stockElem.textContent);
-                stock += liters;
-                stockElem.textContent = stock.toFixed(2);
-                saveStock(machine, fuel, stock);
-                updateTotals(machine, fuel);
-            }
-            async function addTransaction(event, machine, fuel) {
-                event.preventDefault();
-                const amountInput = document.getElementById(`amount-${machine}-${fuel}`);
-                const priceInput = document.getElementById(`price-${machine}-${fuel}`);
-                const amount = parseFloat(amountInput.value);
-                const price = parseFloat(priceInput.value);
-                if (isNaN(amount) || amount <= 0 || isNaN(price) || price <= 0) return;
+        }
 
-                const liters = amount / price;
-                const stockElem = document.getElementById(`stock-${machine}-${fuel}`);
-                let currentStock = parseFloat(stockElem.textContent);
-                if (currentStock < liters) { alert(`Insufficient ${fuel}! Available: ${currentStock.toFixed(2)} L, needed: ${liters.toFixed(2)} L`); return; }
-                const newStock = currentStock - liters;
-                stockElem.textContent = newStock.toFixed(2);
-                saveStock(machine, fuel, newStock);
-                if (newStock <= 300) alert(`⚠️ Low stock alert! Machine ${machine} - ${fuel} now ${newStock.toFixed(2)} L.`);
+        async function addTransaction(event, machine, fuel) {
+            event.preventDefault();
+            const amountInput = document.getElementById(`amount-${machine}-${fuel}`);
+            const priceInput = document.getElementById(`price-${machine}-${fuel}`);
+            const amount = parseFloat(amountInput.value);
+            const price = parseFloat(priceInput.value);
+            if (isNaN(amount) || amount <= 0 || isNaN(price) || price <= 0) return;
+            const liters = amount / price;
 
-                const table = document.getElementById(`trans-table-${machine}-${fuel}`);
-                const tbody = table.querySelector('tbody');
-                const rowCount = tbody.rows.length + 1;
-                const now = new Date();
-                const dateStr = now.toLocaleString();
-                const newRow = tbody.insertRow();
-                newRow.innerHTML = `<td>${rowCount}</td><td>₱${amount.toFixed(2)}</td><td>${liters.toFixed(3)}</td><td><button class="remove-btn" onclick="removeLocalTransaction(this, ${machine}, '${fuel}', ${liters})">Remove</button></td><td>${dateStr}</td>`;
-                updateTotals(machine, fuel);
+            const res = await fetch('/save_fuel_transaction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ machine_number: machine, fuel_type: fuel, amount, liters, price_per_liter: price })
+            });
+            const data = await res.json();
 
-                try {
-                    const response = await fetch(saveUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                        body: JSON.stringify({ machine_number: machine, fuel_type: fuel, amount: amount, liters: liters, price_per_liter: price })
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        const globalTableBody = document.querySelector('#fuel-transactions-table tbody');
-                        if (globalTableBody.querySelector('td[colspan]')) globalTableBody.innerHTML = '';
-                        const newGlobalRow = globalTableBody.insertRow(0);
-                        newGlobalRow.setAttribute('data-id', data.transaction_id);
-                        newGlobalRow.innerHTML = `<td>${machine}</td><td>${fuel}</td><td>₱${amount.toFixed(2)}</td><td>${liters.toFixed(3)}</td><td>₱${price.toFixed(2)}</td><td>${dateStr}</td><td><button class="remove-btn" onclick="deleteFuelTransaction(${data.transaction_id})">Delete</button></td>`;
-                    } else { alert('Error saving transaction: ' + data.error); }
-                } catch (err) { console.error(err); alert('Network error'); }
+            if (data.success) {
+                // Update stock display
+                stockState[`${machine}-${fuel}`] = data.new_stock;
+                renderStockDisplay(machine, fuel);
+                if (data.new_stock <= 300) alert(`⚠️ Low stock! Machine ${machine} - ${fuel}: ${data.new_stock.toFixed(2)} L remaining`);
+
+                // Append new transaction row
+                const key = `${machine}-${fuel}`;
+                if (!transactionRows[key]) transactionRows[key] = [];
+                transactionRows[key].unshift({
+                    amount: amount,
+                    liters: liters,
+                    created_at: data.created_at
+                });
+                renderTransactionTable(machine, fuel);
                 amountInput.value = '';
+            } else {
+                alert('Error: ' + data.error);
             }
-            async function deleteFuelTransaction(transId) {
-                if (!confirm('Delete this fuel transaction?')) return;
-                try {
-                    const response = await fetch(deleteUrl + '?id=' + transId, { method: 'DELETE', headers: { 'X-CSRFToken': csrfToken } });
-                    const data = await response.json();
-                    if (data.success) { const row = document.querySelector(`#fuel-transactions-table tr[data-id="${transId}"]`); if (row) row.remove(); }
-                    else { alert('Failed: ' + data.error); }
-                } catch (err) { alert('Error deleting'); }
-            }
-            function buildMachines() {
-                const container = document.getElementById('machines-container');
-                container.innerHTML = '';
-                for (let m = 1; m <= MAX_MACHINES; m++) {
-                    const machineDiv = document.createElement('div');
-                    machineDiv.className = 'machine-card';
-                    machineDiv.innerHTML = `<div class="machine-title"><i class="fas fa-tachometer-alt"></i> Machine ${m}</div>`;
-                    for (let fuel of FUEL_TYPES) {
-                        const stock = loadStock(m, fuel);
-                        machineDiv.innerHTML += `
-                            <div class="fuel-card">
-                                <div class="fuel-header">${fuel}</div>
-                                <div class="stock-info">
-                                    <span>Stock: <strong id="stock-${m}-${fuel}">${stock.toFixed(2)}</strong> L</span>
-                                    <div class="stock-input-group">
-                                        <input type="number" id="add-stock-${m}-${fuel}" step="10" placeholder="Add L">
-                                        <button onclick="addStock(${m}, '${fuel}')">+</button>
-                                    </div>
-                                </div>
-                                <form class="add-form" onsubmit="addTransaction(event, ${m}, '${fuel}')">
-                                    <div><label>Amount (₱)</label><input type="number" step="0.01" id="amount-${m}-${fuel}" required></div>
-                                    <div><label>Price/L (₱)</label><input type="number" step="0.01" id="price-${m}-${fuel}" value="60" required></div>
-                                    <button type="submit">Sell</button>
-                                </form>
-                                <table class="transaction-table" id="trans-table-${m}-${fuel}">
-                                    <thead><tr><th>#</th><th>Amount</th><th>Liters</th><th>Remove</th><th>Date</th></tr></thead>
-                                    <tbody></tbody>
-                                    <tfoot>
-                                        <tr class="total-row"><td colspan="2">Total Amount:</td><td id="total-amount-${m}-${fuel}">₱0.00</td></tr>
-                                        <tr class="total-row"><td colspan="2">Total Liters:</td><td id="total-liters-${m}-${fuel}">0.00</td></tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        `;
-                    }
-                    container.appendChild(machineDiv);
-                }
-            }
-            function populateMachineTables() {
-                for (let m = 1; m <= MAX_MACHINES; m++) {
-                    for (let fuel of FUEL_TYPES) {
-                        const tbody = document.querySelector(`#trans-table-${m}-${fuel} tbody`);
-                        if (tbody) tbody.innerHTML = '';
-                    }
-                }
-                for (let t of fuelTransactions) {
-                    const m = t.machine_number;
-                    const fuel = t.fuel_type;
-                    if (m < 1 || m > MAX_MACHINES) continue;
-                    const tbody = document.querySelector(`#trans-table-${m}-${fuel} tbody`);
-                    if (tbody) {
-                        const rowCount = tbody.rows.length + 1;
-                        const row = tbody.insertRow();
-                        row.innerHTML = `<td>${rowCount}</td><td>₱${parseFloat(t.amount).toFixed(2)}</td><td>${parseFloat(t.liters).toFixed(3)}</td><td><button class="remove-btn" onclick="removeLocalTransaction(this, ${m}, '${fuel}', ${parseFloat(t.liters)})">Remove</button></td><td>${new Date(t.created_at).toLocaleString()}</td>`;
-                    }
-                }
-                for (let m = 1; m <= MAX_MACHINES; m++) {
-                    for (let fuel of FUEL_TYPES) {
-                        updateTotals(m, fuel);
-                    }
-                }
-            }
-            buildMachines();
-            populateMachineTables();
+        }
 
-            // ---------- Vue app for fuel price management ----------
+        function buildMachines() {
+            const container = document.getElementById('machines-container');
+            container.innerHTML = '';
+            for (let m = 1; m <= MAX_MACHINES; m++) {
+                const machineDiv = document.createElement('div');
+                machineDiv.className = 'machine-card';
+                machineDiv.innerHTML = `<div class="machine-title"><i class="fas fa-tachometer-alt"></i> Machine ${m}</div>`;
+                for (let fuel of FUEL_TYPES) {
+                    machineDiv.innerHTML += `
+                        <div class="fuel-card">
+                            <div class="fuel-header">${fuel}</div>
+                            <div class="stock-info">
+                                <span>Stock: <strong id="stock-${m}-${fuel}">Loading...</strong> L</span>
+                                <div class="stock-input-group">
+                                    <input type="number" id="add-stock-${m}-${fuel}" step="10" placeholder="Add L" min="1">
+                                    <button onclick="addStock(${m}, '${fuel}')">+</button>
+                                </div>
+                            </div>
+                            <form class="add-form" onsubmit="addTransaction(event, ${m}, '${fuel}')">
+                                <div><label>Amount (₱)</label><input type="number" step="0.01" id="amount-${m}-${fuel}" required></div>
+                                <div><label>Price/L (₱)</label><input type="number" step="0.01" id="price-${m}-${fuel}" value="60" required></div>
+                                <button type="submit">Sell</button>
+                            </form>
+                            <table class="transaction-table" id="trans-table-${m}-${fuel}">
+                                <thead><tr><th>#</th><th>Amount</th><th>Liters</th><th>Date</th></tr></thead>
+                                <tbody></tbody>
+                                <tfoot>
+                                    <tr class="total-row"><td colspan="2">Total Amount:</td><td id="total-amount-${m}-${fuel}" colspan="2">₱0.00</td></tr>
+                                    <tr class="total-row"><td colspan="2">Total Liters:</td><td id="total-liters-${m}-${fuel}" colspan="2">0.000</td></tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    `;
+                }
+                container.appendChild(machineDiv);
+            }
+        }
+
+        async function initPage() {
+            buildMachines();
+            await loadAllStock();
+            await loadAllTransactions();
+            for (let m = 1; m <= MAX_MACHINES; m++) {
+                for (let fuel of FUEL_TYPES) {
+                    renderStockDisplay(m, fuel);
+                    renderTransactionTable(m, fuel);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initPage();
+
+            // Vue for price management
             new Vue({
                 el: '#fuelPriceApp',
                 data: { history: [] },
-                filters: {
-                    formatDate: function (value) {
-                        if (!value) return '';
-                        return new Date(value).toLocaleString();
-                    }
-                },
                 mounted() {
                     this.loadHistory();
                     this.renderChart();
                 },
                 methods: {
+                    formatDate(value) {
+                        if (!value) return '';
+                        return new Date(value).toLocaleString();
+                    },
                     async loadHistory() {
                         const res = await fetch('/fuel_price_history');
                         this.history = await res.json();
-                        console.log("History loaded:", this.history);
                     },
                     async updatePrice(fuelType) {
                         const inputId = fuelType === 'Unleaded' ? 'new_unleaded' : 'new_diesel';
@@ -665,23 +646,25 @@
                         const records = await res.json();
                         const unleaded = records.filter(r => r.fuel_type === 'Unleaded').reverse();
                         const diesel = records.filter(r => r.fuel_type === 'Diesel').reverse();
-                        const allDates = [...unleaded.map(r => r.changed_at.split('T')[0]), ...diesel.map(r => r.changed_at.split('T')[0])];
+                        const allDates = [
+                            ...unleaded.map(r => r.changed_at.split('T')[0]),
+                            ...diesel.map(r => r.changed_at.split('T')[0])
+                        ];
                         const labels = [...new Set(allDates)].sort();
                         const ctx = document.getElementById('priceChart').getContext('2d');
-                        // Destroy previous chart if exists
                         if (window.priceChart && typeof window.priceChart.destroy === 'function') {
                             window.priceChart.destroy();
                         }
                         window.priceChart = new Chart(ctx, {
                             type: 'line',
                             data: {
-                                labels: labels,
+                                labels,
                                 datasets: [
                                     { label: 'Unleaded', data: labels.map(d => { let r = unleaded.find(u => u.changed_at.split('T')[0] === d); return r ? r.new_price : null; }), borderColor: '#0A1172', fill: false, tension: 0.1 },
                                     { label: 'Diesel', data: labels.map(d => { let r = diesel.find(u => u.changed_at.split('T')[0] === d); return r ? r.new_price : null; }), borderColor: '#87CEEB', fill: false, tension: 0.1 }
                                 ]
                             },
-                            options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ₱${ctx.raw}` } } } }
+                            options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ₱${ctx.raw}` } } } }
                         });
                     }
                 }

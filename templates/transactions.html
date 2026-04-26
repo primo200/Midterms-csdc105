@@ -301,7 +301,8 @@
                 <a href="{{ url_for('home') }}" class="nav-btn"><i class="fas fa-home"></i> Home</a>
                 <a href="{{ url_for('users_list') }}" class="nav-btn"><i class="fas fa-users"></i> Users</a>
                 <a href="{{ url_for('products') }}" class="nav-btn"><i class="fas fa-box"></i> Stock</a>
-                <a href="{{ url_for('transactions') }}" class="nav-btn active"><i class="fas fa-receipt"></i> Transactions</a>
+                <a href="{{ url_for('transactions') }}" class="nav-btn active"><i class="fas fa-receipt"></i>
+                    Transactions</a>
                 <a href="{{ url_for('fuel') }}" class="nav-btn"><i class="fas fa-gas-pump"></i> Fuel</a>
                 <a href="{{ url_for('sales') }}" class="nav-btn"><i class="fas fa-chart-line"></i> Sales</a>
             </div>
@@ -422,7 +423,7 @@
                     </tbody>
                 </table>
             </div>
-            <!-- Fuel Transactions Table -->
+            <!-- Fuel Transactions -->
             <div class="section-title" style="margin-top: 40px;">
                 <i class="fas fa-gas-pump"></i>
                 All Fuel Transactions
@@ -452,7 +453,8 @@
                             <td>₱{{ "%.2f"|format(trans.price_per_liter) }}</td>
                             <td>{{ trans.created_at.strftime('%B %d, %Y %H:%M') if trans.created_at else 'N/A' }}</td>
                             <td>
-                                <form method="POST" action="{{ url_for('delete_fuel_transaction_form', trans_id=trans.id) }}"
+                                <form method="POST"
+                                    action="{{ url_for('delete_fuel_transaction_form', trans_id=trans.id) }}"
                                     style="display: inline;">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="remove-button">Delete</button>
@@ -461,13 +463,13 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="8" style="text-align: center;">No fuel transactions found</td>
+                            <td colspan="8" style="text-align:center;">No fuel transactions found</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            </div>
+
         </div>
     </div>
 </body>

@@ -36,9 +36,9 @@ def create_app():
     db.init_app(app)
     csrf.init_app(app)
     
-    with app.app_context():
+ 
         #Models
-        class User(db.Model):
+    class User(db.Model):
             __tablename__ = 'auth_user'
             id = db.Column(db.Integer, primary_key=True)
             username = db.Column(db.String(150), nullable=False, unique=True)
@@ -53,7 +53,7 @@ def create_app():
                 return f"<User {self.username}>"
         
 
-        class ProductStock(db.Model):
+    class ProductStock(db.Model):
             __tablename__ = 'members_productstock'
             id = db.Column(db.Integer, primary_key=True)
             name = db.Column(db.String(100), nullable=False)
@@ -61,7 +61,7 @@ def create_app():
             created_at = db.Column(db.DateTime, default=datetime.utcnow)
             updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
         
-        class ProductTransaction(db.Model):
+    class ProductTransaction(db.Model):
             __tablename__ = 'members_producttransaction'
             id = db.Column(db.Integer, primary_key=True)
             name = db.Column(db.String(100), nullable=False)
@@ -71,7 +71,7 @@ def create_app():
             total_price = db.Column(db.Numeric(10, 2), nullable=False)
             created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-        class FuelTransaction(db.Model):
+    class FuelTransaction(db.Model):
             __tablename__ = 'members_fueltransaction'  
             id = db.Column(db.Integer, primary_key=True)
             machine_number = db.Column(db.Integer, nullable=False)
@@ -81,13 +81,21 @@ def create_app():
             price_per_liter = db.Column(db.Numeric(6, 2), nullable=False)
             created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-        class FuelPriceHistory(db.Model):
+    class FuelPriceHistory(db.Model):
             __tablename__ = 'fuel_price_history'
             id = db.Column(db.Integer, primary_key=True)
             fuel_type = db.Column(db.String(50), nullable=False)
             old_price = db.Column(db.Numeric(6,2), nullable=False)
             new_price = db.Column(db.Numeric(6,2), nullable=False)
             changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    class FuelStock(db.Model):
+            __tablename__ = 'fuel_stock'
+            id = db.Column(db.Integer, primary_key=True)
+            machine_number = db.Column(db.Integer, nullable=False)
+            fuel_type = db.Column(db.String(50), nullable=False)
+            stock_liters = db.Column(db.Numeric(10, 2), nullable=False, default=1000)
+            last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     #Routes
     @app.route('/')
@@ -373,8 +381,30 @@ def create_app():
         amount = data.get('amount')
         liters = data.get('liters')
         price_per_liter = data.get('price_per_liter')
+
         if not all([machine_number, fuel_type, amount, liters, price_per_liter]):
             return jsonify({'success': False, 'error': 'Missing fields'}), 400
+
+        # Fetch stock
+        stock = FuelStock.query.filter_by(
+            machine_number=machine_number,
+            fuel_type=fuel_type
+        ).first()
+
+        if not stock:
+            return jsonify({'success': False, 'error': 'Stock record not found'}), 404
+
+        if float(stock.stock_liters) < float(liters):
+            return jsonify({
+                'success': False,
+                'error': f'Insufficient stock. Available: {float(stock.stock_liters):.2f} L'
+            }), 400
+
+        # Deduct stock
+        stock.stock_liters = float(stock.stock_liters) - float(liters)
+        stock.last_updated = datetime.utcnow()
+
+        # Record transaction
         new_trans = FuelTransaction(
             machine_number=machine_number,
             fuel_type=fuel_type,
@@ -384,7 +414,54 @@ def create_app():
         )
         db.session.add(new_trans)
         db.session.commit()
-        return jsonify({'success': True, 'transaction_id': new_trans.id})
+
+        return jsonify({
+            'success': True,
+            'transaction_id': new_trans.id,
+            'new_stock': float(stock.stock_liters),
+            'created_at': new_trans.created_at.isoformat()
+        })
+
+    @app.route('/get_fuel_stock', methods=['GET'])
+    def get_fuel_stock():
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        stocks = FuelStock.query.all()
+        return jsonify([{
+            'machine_number': s.machine_number,
+            'fuel_type': s.fuel_type,
+            'stock_liters': float(s.stock_liters)
+        } for s in stocks])
+
+    @app.route('/add_fuel_stock', methods=['POST'])
+    def add_fuel_stock():
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        data = request.get_json()
+        machine_number = data.get('machine_number')
+        fuel_type = data.get('fuel_type')
+        add_liters = float(data.get('add_liters', 0))
+
+        if add_liters <= 0:
+            return jsonify({'success': False, 'error': 'Invalid amount'}), 400
+
+        stock = FuelStock.query.filter_by(
+            machine_number=machine_number,
+            fuel_type=fuel_type
+        ).first()
+
+        if not stock:
+            return jsonify({'success': False, 'error': 'Stock record not found'}), 404
+
+        new_total = float(stock.stock_liters) + add_liters
+        if new_total > 1000:
+            return jsonify({'success': False, 'error': 'Cannot exceed 1000L capacity'}), 400
+
+        stock.stock_liters = new_total
+        stock.last_updated = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({'success': True, 'new_stock': float(stock.stock_liters)})
 
     @app.route('/delete_fuel_transaction', methods=['DELETE'])
     def delete_fuel_transaction():
@@ -399,6 +476,21 @@ def create_app():
         db.session.delete(trans)
         db.session.commit()
         return jsonify({'success': True})
+
+    @app.route('/get_fuel_transactions', methods=['GET'])
+    def get_fuel_transactions():
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        transactions = FuelTransaction.query.order_by(FuelTransaction.created_at.desc()).all()
+        return jsonify([{
+            'id': t.id,
+            'machine_number': t.machine_number,
+            'fuel_type': t.fuel_type,
+            'amount': float(t.amount),
+            'liters': float(t.liters),
+            'price_per_liter': float(t.price_per_liter),
+            'created_at': t.created_at.isoformat() if t.created_at else None
+        } for t in transactions])
 
     @app.route('/get_fuel_prices', methods=['GET'])
     def get_fuel_prices():
