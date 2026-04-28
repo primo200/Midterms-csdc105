@@ -235,7 +235,6 @@ def create_app():
         flash('Product deleted from stock', 'success')
         return redirect(url_for('products'))
     
-        # Inside create_app() after other routes, add:
 
 
     @app.route('/add_product_transaction', methods=['POST'])
@@ -314,7 +313,6 @@ def create_app():
         flash('You have been logged out', 'info')
         return redirect(url_for('login'))
     
-    # Inside create_app() after other routes, add:
 
     @app.route('/home')
     def home():
@@ -342,7 +340,6 @@ def create_app():
             flash('Please login first', 'error')
             return redirect(url_for('login'))
 
-        # 1. Get fuel transactions (existing code)
         fuel_transactions = FuelTransaction.query.order_by(FuelTransaction.created_at.desc()).all()
         fuel_transactions_json = [
             {
@@ -357,13 +354,11 @@ def create_app():
             for t in fuel_transactions
         ] if fuel_transactions else []
 
-        # 2. Get the latest price for Unleaded and Diesel from the price history table
         last_unleaded = FuelPriceHistory.query.filter_by(fuel_type='Unleaded').order_by(FuelPriceHistory.changed_at.desc()).first()
         last_diesel = FuelPriceHistory.query.filter_by(fuel_type='Diesel').order_by(FuelPriceHistory.changed_at.desc()).first()
         current_unleaded = last_unleaded.new_price if last_unleaded else 60.0
         current_diesel = last_diesel.new_price if last_diesel else 55.0
 
-        # 3. Render the template with all variables
         return render_template('fuel.html',
                                fuel_transactions=fuel_transactions,
                                fuel_transactions_json=fuel_transactions_json,
@@ -494,9 +489,7 @@ def create_app():
 
     @app.route('/get_fuel_prices', methods=['GET'])
     def get_fuel_prices():
-        # Return current prices (from config or last price in history)
-        # For simplicity, you can store current prices in a separate table or use last entry.
-        # Here we'll return the latest price for each fuel type.
+        
         unleaded = FuelPriceHistory.query.filter_by(fuel_type='Unleaded').order_by(FuelPriceHistory.changed_at.desc()).first()
         diesel = FuelPriceHistory.query.filter_by(fuel_type='Diesel').order_by(FuelPriceHistory.changed_at.desc()).first()
         return jsonify({
