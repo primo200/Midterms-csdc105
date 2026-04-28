@@ -123,85 +123,42 @@
             padding: 30px;
         }
 
-        .daily-total {
-            background: linear-gradient(135deg, #F0F8FF 0%, #ffffff 100%);
-            padding: 20px;
-            border-radius: 10px;
+        /* Sales cards */
+        .sales-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
             margin-bottom: 30px;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #F0F8FF 0%, #ffffff 100%);
+            padding: 25px;
+            border-radius: 16px;
             text-align: center;
             border-left: 4px solid #0A1172;
-            box-shadow: 0 2px 10px rgba(10, 17, 114, 0.1);
+            box-shadow: 0 4px 15px rgba(10, 17, 114, 0.1);
+            transition: transform 0.2s;
         }
 
-        .daily-total h2 {
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card h3 {
             color: #0A1172;
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .daily-total span {
-            color: #0A1172;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .section-title {
-            margin: 30px 0 20px;
-            color: #333;
-            font-size: 20px;
+            font-size: 1.2rem;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .section-title i {
+        .card .amount {
+            font-size: 2.5rem;
+            font-weight: bold;
             color: #0A1172;
-        }
-
-        .table-container {
-            overflow-x: auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(10, 17, 114, 0.1);
-            margin-bottom: 30px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #F0F8FF;
-            color: #0A1172;
-            font-weight: 600;
-            padding: 12px;
-            text-align: left;
-            border-bottom: 2px solid #87CEEB;
-        }
-
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #87CEEB;
-            color: #666;
-        }
-
-        tr:hover {
-            background: #F0F8FF;
-        }
-
-        .remove-button {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .remove-button:hover {
-            background-color: #c82333;
         }
 
         .flash-messages {
@@ -264,7 +221,7 @@
         </div>
 
         <div class="content">
-            <!-- messages -->
+            <!-- Flash messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="flash-messages">
@@ -279,81 +236,66 @@
             {% endif %}
             {% endwith %}
 
-            <div class="daily-total">
-                <h2><i class="fas fa-calendar-day"></i> Today's Total Sales</h2>
-                <span id="daily-total">₱0.00</span>
-            </div>
-
-            <div class="section-title">
-                <i class="fas fa-box-open"></i>
-                Product Sales
-            </div>
-            <div class="table-container">
-                <table id="product-sales-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Product</th>
-                            <th>Quantity</th>
-                            <th>Price per Unit (₱)</th>
-                            <th>Total (₱)</th>
-                            <th>Date</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for trans in product_transactions %}
-                        <tr data-date="{{ trans.created_at.strftime('%B %d, %Y') if trans.created_at else '' }}"
-                            data-amount="{{ trans.total_price }}">
-                            <td>{{ trans.id }}</td>
-                            <td>{{ trans.name }}</td>
-                            <td>{{ trans.quantity }}</td>
-                            <td>₱{{ "%.2f"|format(trans.price_per_unit) }}</td>
-                            <td>₱{{ "%.2f"|format(trans.total_price) }}</td>
-                            <td>{{ trans.created_at.strftime('%B %d, %Y') if trans.created_at else 'N/A' }}</td>
-                            <td>
-                                <form method="POST"
-                                    action="{{ url_for('delete_product_transaction', transaction_id=trans.id) }}">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="remove-button">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="7" style="text-align: center;">No product sales recorded yet.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <!-- Sales summary cards -->
+            <div class="sales-cards">
+                <div class="card">
+                    <h3><i class="fas fa-calendar-day"></i> Today's Sales</h3>
+                    <div class="amount" id="daily-total">₱0.00</div>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-calendar-alt"></i> This Month's Sales</h3>
+                    <div class="amount" id="monthly-total">₱0.00</div>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-calendar-year"></i> This Year's Sales</h3>
+                    <div class="amount" id="yearly-total">₱0.00</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        function calculateDailyTotal() {
+        // Pass product transactions data from Flask as JSON
+        const productTransactions = {{ product_transactions| tojson }};
+
+        function calculateTotals() {
             const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth(); // 0‑based
             const todayStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-            let total = 0;
 
-            // Product sales rows only
-            document.querySelectorAll('#product-sales-table tbody tr[data-date]').forEach(row => {
-                const date = row.getAttribute('data-date');
-                const amount = parseFloat(row.getAttribute('data-amount'));
-                if (date === todayStr && !isNaN(amount)) {
-                    total += amount;
+            let dailyTotal = 0;
+            let monthlyTotal = 0;
+            let yearlyTotal = 0;
+
+            for (let trans of productTransactions) {
+                const transDate = new Date(trans.created_at);
+                const transYear = transDate.getFullYear();
+                const transMonth = transDate.getMonth();
+                const transDateStr = transDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                const amount = trans.total_price;
+
+                // Yearly
+                if (transYear === currentYear) {
+                    yearlyTotal += amount;
+                    // Monthly
+                    if (transMonth === currentMonth) {
+                        monthlyTotal += amount;
+                        // Daily
+                        if (transDateStr === todayStr) {
+                            dailyTotal += amount;
+                        }
+                    }
                 }
-            });
+            }
 
-            const formattedTotal = total.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-            document.getElementById('daily-total').textContent = `₱${formattedTotal}`;
+            document.getElementById('daily-total').textContent = `₱${dailyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('monthly-total').textContent = `₱${monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('yearly-total').textContent = `₱${yearlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
 
-        document.addEventListener('DOMContentLoaded', calculateDailyTotal);
+        document.addEventListener('DOMContentLoaded', calculateTotals);
     </script>
 </body>
-
+ 
 </html>

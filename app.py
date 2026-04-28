@@ -305,7 +305,19 @@ def create_app():
             flash('Please login first', 'error')
             return redirect(url_for('login'))
         product_transactions = ProductTransaction.query.order_by(ProductTransaction.created_at.desc()).all()
-        return render_template('sales.html', product_transactions=product_transactions)
+        # Convert to JSON-serializable list of dicts
+        product_transactions_json = [
+            {
+                'id': t.id,
+                'name': t.name,
+                'quantity': t.quantity,
+                'price_per_unit': float(t.price_per_unit),
+                'total_price': float(t.total_price),
+                'created_at': t.created_at.isoformat() if t.created_at else None
+            }
+            for t in product_transactions
+        ]
+        return render_template('sales.html', product_transactions=product_transactions_json)
 
     @app.route('/logout')
     def logout():
