@@ -120,7 +120,7 @@
 
         .machines-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 30px;
             margin-bottom: 40px;
         }
@@ -241,6 +241,34 @@
             font-weight: bold;
         }
 
+        /* Styles for hidden rows and toggle button */
+        .extra-row {
+            display: none;
+        }
+
+        .toggle-btn {
+            background: #0A1172;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .toggle-btn:hover {
+            background: #87CEEB;
+            color: #0A1172;
+        }
+
+        .table-footer {
+            display: flex;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
         .flash-messages {
             margin-bottom: 20px;
         }
@@ -276,13 +304,8 @@
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <h1><i class="fas fa-gas-pump"></i> TSRO Fuel Management</h1>
                 <div class="user-info">
-                    <span>
-                        <i class="fas fa-user"></i>
-                        {{ session.username }}
-                    </span>
-                    <a href="{{ url_for('logout') }}" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+                    <span><i class="fas fa-user"></i> {{ session.username }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
             <div class="nav-buttons">
@@ -350,29 +373,68 @@
             }
         }
 
+        // Renders the transaction table with show/hide toggle for extra rows
         function renderTransactionTable(machine, fuel) {
             const key = `${machine}-${fuel}`;
             const tbody = document.querySelector(`#trans-table-${machine}-${fuel} tbody`);
+            const footerDiv = document.getElementById(`trans-footer-${machine}-${fuel}`);
             if (!tbody) return;
             tbody.innerHTML = '';
             const rows = transactionRows[key] || [];
+            if (rows.length === 0) {
+                if (footerDiv) footerDiv.innerHTML = '';
+                return;
+            }
+
+            // Show only first 5 initially, rest hidden
+            const showCount = 5;
             let totalAmount = 0, totalLiters = 0;
-            rows.forEach((t, i) => {
+            rows.forEach((t, idx) => {
                 totalAmount += parseFloat(t.amount);
                 totalLiters += parseFloat(t.liters);
                 const tr = document.createElement('tr');
+                tr.className = idx >= showCount ? 'extra-row' : '';
                 tr.innerHTML = `
-                    <td>${i + 1}</td>
+                    <td>${idx + 1}</td>
                     <td>₱${parseFloat(t.amount).toFixed(2)}</td>
                     <td>${parseFloat(t.liters).toFixed(3)}</td>
                     <td>${new Date(t.created_at).toLocaleString()}</td>
                 `;
                 tbody.appendChild(tr);
             });
+
+            // Update totals in footer
             const totalAmountEl = document.getElementById(`total-amount-${machine}-${fuel}`);
             const totalLitersEl = document.getElementById(`total-liters-${machine}-${fuel}`);
             if (totalAmountEl) totalAmountEl.textContent = `₱${totalAmount.toFixed(2)}`;
             if (totalLitersEl) totalLitersEl.textContent = totalLiters.toFixed(3);
+
+            // Create or update toggle button if more than 5 rows
+            if (footerDiv) {
+                footerDiv.innerHTML = '';
+                if (rows.length > showCount) {
+                    const btn = document.createElement('button');
+                    btn.className = 'toggle-btn';
+                    btn.innerHTML = '<i class="fas fa-chevron-down"></i> Show All (' + rows.length + ' records)';
+                    let expanded = false;
+                    btn.onclick = () => {
+                        expanded = !expanded;
+                        const extraRows = tbody.querySelectorAll('.extra-row');
+                        extraRows.forEach(row => {
+                            row.style.display = expanded ? 'table-row' : 'none';
+                        });
+                        const icon = btn.querySelector('i');
+                        if (expanded) {
+                            icon.className = 'fas fa-chevron-up';
+                            btn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Less';
+                        } else {
+                            icon.className = 'fas fa-chevron-down';
+                            btn.innerHTML = `<i class="fas fa-chevron-down"></i> Show All (${rows.length} records)`;
+                        }
+                    };
+                    footerDiv.appendChild(btn);
+                }
+            }
         }
 
         async function addStock(machine, fuel) {
@@ -455,6 +517,7 @@
                                     <tr class="total-row"><td colspan="2">Total Liters:</td><td id="total-liters-${m}-${fuel}" colspan="2">0.000</td></tr>
                                 </tfoot>
                             </table>
+                            <div id="trans-footer-${m}-${fuel}" class="table-footer"></div>
                         </div>
                     `;
                 }

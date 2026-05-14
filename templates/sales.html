@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sales Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -74,11 +75,7 @@
             transition: all 0.3s ease;
         }
 
-        .nav-btn:hover {
-            background: #87CEEB;
-            color: #0A1172;
-        }
-
+        .nav-btn:hover,
         .nav-btn.active {
             background: #87CEEB;
             color: #0A1172;
@@ -123,7 +120,6 @@
             padding: 30px;
         }
 
-        /* Sales cards */
         .sales-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -159,6 +155,55 @@
             font-size: 2.5rem;
             font-weight: bold;
             color: #0A1172;
+        }
+
+        .chart-card {
+            background: #F0F8FF;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(10, 17, 114, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0A1172;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .range-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .range-btn {
+            background: white;
+            color: #0A1172;
+            border: 1px solid #87CEEB;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .range-btn:hover,
+        .range-btn.active {
+            background: #0A1172;
+            color: white;
+            border-color: #0A1172;
         }
 
         .flash-messages {
@@ -200,13 +245,8 @@
                     Sales Dashboard
                 </h1>
                 <div class="user-info">
-                    <span>
-                        <i class="fas fa-user"></i>
-                        {{ session.username }}
-                    </span>
-                    <a href="{{ url_for('logout') }}" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+                    <span><i class="fas fa-user"></i> {{ session.username }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
             <div class="nav-buttons">
@@ -221,7 +261,6 @@
         </div>
 
         <div class="content">
-            <!-- Flash messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="flash-messages">
@@ -236,7 +275,7 @@
             {% endif %}
             {% endwith %}
 
-            <!-- Sales summary cards -->
+            <!-- Summary Cards -->
             <div class="sales-cards">
                 <div class="card">
                     <h3><i class="fas fa-calendar-day"></i> Today's Sales</h3>
@@ -247,9 +286,24 @@
                     <div class="amount" id="monthly-total">₱0.00</div>
                 </div>
                 <div class="card">
-                    <h3><i class="fas fa-calendar-year"></i> This Year's Sales</h3>
+                    <h3><i class="fas fa-calendar"></i> This Year's Sales</h3>
                     <div class="amount" id="yearly-total">₱0.00</div>
                 </div>
+            </div>
+
+            <!-- Line Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-line"></i> Daily Sales Trend
+                    </div>
+                    <div class="range-buttons">
+                        <button class="range-btn" onclick="setRange(7)">7 Days</button>
+                        <button class="range-btn active" onclick="setRange(30)">30 Days</button>
+                        <button class="range-btn" onclick="setRange(90)">90 Days</button>
+                    </div>
+                </div>
+                <canvas id="salesChart"></canvas>
             </div>
         </div>
     </div>
@@ -258,56 +312,176 @@
         const productTransactions = {{ product_transactions | tojson }};
         const fuelTransactions = {{ fuel_transactions | tojson }};
 
+        // ── Summary cards ──────────────────────────────────────────
         function calculateTotals() {
             const today = new Date();
             const currentYear = today.getFullYear();
             const currentMonth = today.getMonth();
-            const todayStr = today.toLocaleDateString('en-US', {
-                year: 'numeric', month: 'long', day: 'numeric'
-            });
+            const todayStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-            let dailyTotal = 0;
-            let monthlyTotal = 0;
-            let yearlyTotal = 0;
+            let dailyTotal = 0, monthlyTotal = 0, yearlyTotal = 0;
 
             for (let trans of productTransactions) {
-                const transDate = new Date(trans.created_at);
-                const amount = parseFloat(trans.total_price);
-                if (transDate.getFullYear() === currentYear) {
-                    yearlyTotal += amount;
-                    if (transDate.getMonth() === currentMonth) {
-                        monthlyTotal += amount;
-                        if (transDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) === todayStr) {
-                            dailyTotal += amount;
-                        }
+                const d = new Date(trans.created_at);
+                const amt = parseFloat(trans.total_price);
+                if (d.getFullYear() === currentYear) {
+                    yearlyTotal += amt;
+                    if (d.getMonth() === currentMonth) {
+                        monthlyTotal += amt;
+                        if (d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) === todayStr)
+                            dailyTotal += amt;
                     }
                 }
             }
 
             for (let trans of fuelTransactions) {
-                const transDate = new Date(trans.created_at);
-                const amount = parseFloat(trans.amount);
-                if (transDate.getFullYear() === currentYear) {
-                    yearlyTotal += amount;
-                    if (transDate.getMonth() === currentMonth) {
-                        monthlyTotal += amount;
-                        if (transDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) === todayStr) {
-                            dailyTotal += amount;
-                        }
+                const d = new Date(trans.created_at);
+                const amt = parseFloat(trans.amount);
+                if (d.getFullYear() === currentYear) {
+                    yearlyTotal += amt;
+                    if (d.getMonth() === currentMonth) {
+                        monthlyTotal += amt;
+                        if (d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) === todayStr)
+                            dailyTotal += amt;
                     }
                 }
             }
 
-            document.getElementById('daily-total').textContent =
-                `₱${dailyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById('monthly-total').textContent =
-                `₱${monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById('yearly-total').textContent =
-                `₱${yearlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const fmt = v => `₱${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('daily-total').textContent = fmt(dailyTotal);
+            document.getElementById('monthly-total').textContent = fmt(monthlyTotal);
+            document.getElementById('yearly-total').textContent = fmt(yearlyTotal);
         }
 
-        document.addEventListener('DOMContentLoaded', calculateTotals);
+        // ── Chart ──────────────────────────────────────────────────
+        let salesChart = null;
+        let currentRange = 30;
+
+        function buildLabels(days) {
+            const labels = [];
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            }
+            return labels;
+        }
+
+        function dateLabel(isoStr) {
+            return new Date(isoStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function aggregateByDay(transactions, amountKey, days) {
+            const labels = buildLabels(days);
+            const totals = Object.fromEntries(labels.map(l => [l, 0]));
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - (days - 1));
+            cutoff.setHours(0, 0, 0, 0);
+
+            for (let t of transactions) {
+                const d = new Date(t.created_at);
+                if (d >= cutoff) {
+                    const lbl = dateLabel(t.created_at);
+                    if (lbl in totals) totals[lbl] += parseFloat(t[amountKey]);
+                }
+            }
+            return labels.map(l => totals[l]);
+        }
+
+        function renderChart(days) {
+            const labels = buildLabels(days);
+            const productData = aggregateByDay(productTransactions, 'total_price', days);
+            const fuelData = aggregateByDay(fuelTransactions, 'amount', days);
+            const combinedData = labels.map((_, i) => productData[i] + fuelData[i]);
+
+            if (salesChart) salesChart.destroy();
+
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            salesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Total Sales',
+                            data: combinedData,
+                            borderColor: '#0A1172',
+                            backgroundColor: 'rgba(10,17,114,0.08)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#0A1172',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Product Sales',
+                            data: productData,
+                            borderColor: '#87CEEB',
+                            backgroundColor: 'rgba(135,206,235,0.08)',
+                            fill: false,
+                            tension: 0.4,
+                            pointBackgroundColor: '#87CEEB',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            borderWidth: 2,
+                            borderDash: [5, 4]
+                        },
+                        {
+                            label: 'Fuel Sales',
+                            data: fuelData,
+                            borderColor: '#f0a500',
+                            backgroundColor: 'rgba(240,165,0,0.08)',
+                            fill: false,
+                            tension: 0.4,
+                            pointBackgroundColor: '#f0a500',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            borderWidth: 2,
+                            borderDash: [5, 4]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.dataset.label}: ₱${parseFloat(ctx.raw).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: val => `₱${val.toLocaleString()}`
+                            },
+                            grid: { color: 'rgba(135,206,235,0.2)' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(135,206,235,0.2)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function setRange(days) {
+            currentRange = days;
+            document.querySelectorAll('.range-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.trim().startsWith(String(days)));
+            });
+            renderChart(days);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateTotals();
+            renderChart(currentRange);
+        });
     </script>
 </body>
- 
+
 </html>
