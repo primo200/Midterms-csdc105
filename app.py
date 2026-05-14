@@ -304,8 +304,10 @@ def create_app():
         if 'user_id' not in session:
             flash('Please login first', 'error')
             return redirect(url_for('login'))
+
         product_transactions = ProductTransaction.query.order_by(ProductTransaction.created_at.desc()).all()
-        # Convert to JSON-serializable list of dicts
+        fuel_transactions = FuelTransaction.query.order_by(FuelTransaction.created_at.desc()).all()
+
         product_transactions_json = [
             {
                 'id': t.id,
@@ -317,7 +319,23 @@ def create_app():
             }
             for t in product_transactions
         ]
-        return render_template('sales.html', product_transactions=product_transactions_json)
+
+        fuel_transactions_json = [
+            {
+                'id': t.id,
+                'machine_number': t.machine_number,
+                'fuel_type': t.fuel_type,
+                'amount': float(t.amount),
+                'liters': float(t.liters),
+                'price_per_liter': float(t.price_per_liter),
+                'created_at': t.created_at.isoformat() if t.created_at else None
+            }
+            for t in fuel_transactions
+        ]
+
+        return render_template('sales.html',
+            product_transactions=product_transactions_json,
+            fuel_transactions=fuel_transactions_json)
 
     @app.route('/logout')
     def logout():

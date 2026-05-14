@@ -255,14 +255,16 @@
     </div>
 
     <script>
-        // Pass product transactions data from Flask as JSON
-        const productTransactions = {{ product_transactions| tojson }};
+        const productTransactions = {{ product_transactions | tojson }};
+        const fuelTransactions = {{ fuel_transactions | tojson }};
 
         function calculateTotals() {
             const today = new Date();
             const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth(); // 0‑based
-            const todayStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            const currentMonth = today.getMonth();
+            const todayStr = today.toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
 
             let dailyTotal = 0;
             let monthlyTotal = 0;
@@ -270,28 +272,38 @@
 
             for (let trans of productTransactions) {
                 const transDate = new Date(trans.created_at);
-                const transYear = transDate.getFullYear();
-                const transMonth = transDate.getMonth();
-                const transDateStr = transDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                const amount = trans.total_price;
-
-                // Yearly
-                if (transYear === currentYear) {
+                const amount = parseFloat(trans.total_price);
+                if (transDate.getFullYear() === currentYear) {
                     yearlyTotal += amount;
-                    // Monthly
-                    if (transMonth === currentMonth) {
+                    if (transDate.getMonth() === currentMonth) {
                         monthlyTotal += amount;
-                        // Daily
-                        if (transDateStr === todayStr) {
+                        if (transDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) === todayStr) {
                             dailyTotal += amount;
                         }
                     }
                 }
             }
 
-            document.getElementById('daily-total').textContent = `₱${dailyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById('monthly-total').textContent = `₱${monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById('yearly-total').textContent = `₱${yearlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            for (let trans of fuelTransactions) {
+                const transDate = new Date(trans.created_at);
+                const amount = parseFloat(trans.amount);
+                if (transDate.getFullYear() === currentYear) {
+                    yearlyTotal += amount;
+                    if (transDate.getMonth() === currentMonth) {
+                        monthlyTotal += amount;
+                        if (transDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) === todayStr) {
+                            dailyTotal += amount;
+                        }
+                    }
+                }
+            }
+
+            document.getElementById('daily-total').textContent =
+                `₱${dailyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('monthly-total').textContent =
+                `₱${monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('yearly-total').textContent =
+                `₱${yearlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
 
         document.addEventListener('DOMContentLoaded', calculateTotals);
